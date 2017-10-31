@@ -27,6 +27,17 @@ Note
 - Containers for this image are run in ephemeral mode. this means that 
   one the container is stopped, it is automatically deleted. This is 
   possible since we use a shared voulme for the files.
+- You should edit your profile to use espeak as the default TTS since 
+  it's the only free software offline engine available for the moment.
+  Installation of svox is not supported because it's proprietary software.
+
+Steps
+-----
+
+    <edit the variable at the top of the script>
+    $ ./kalliope_docker.py setup generate
+    $ ./kalliope_docker.py image create
+    $ /kalliope_docker.py container run
 
 Dependencies
 ------------
