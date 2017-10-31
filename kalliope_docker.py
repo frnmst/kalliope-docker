@@ -1,0 +1,375 @@
+#!/usr/bin/env python3
+
+# kalliope_docker.py
+#
+# Copyright (c) 2017, Franco Masotti
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+import yaml
+import os
+import shutil
+import argparse
+import subprocess
+from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired
+
+
+KALLIOPE_PROFILE_GIT_URL='https://github.com/kalliope-project/kalliope_starter_it.git'
+# Resources can be: neurons, TTS, STT.
+RESOURCE_LIST_GIT_URLS=['https://github.com/Ultchad/kalliope-espeak.git']
+DOCKERFILE='Dockerfile'
+DEBIAN_VERSION='stretch'
+DOCKER_IMAGE_TAG="kalliope-debian"
+LOCAL_SHARED_DIRECTORY="kalliope-shared"
+CONTAINER_SHARED_HOME_DIRECTORY="/home/kalliope"
+TIMEZONE="Europe/Rome"
+
+
+# See https://stackoverflow.com/a/28319191
+def shell_exec(cmd):
+    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
+        for line in p.stdout:
+            print(line, end='')
+
+class Setup():
+    """ Generate the Dockerfile according to the user configuration.
+        Setup the starter kit with all specified dependencies in the
+        correct place. See the documentation at:
+        <https://github.com/kalliope-project/kalliope/blob/master/Docs/contributing.md>
+    """
+
+    def __init__(self,args):
+        """ Define some constants and user configuration for the Dockerfile.
+        """
+
+        self.standard_apt_packages='''
+curl \
+git \
+python-dev \
+libsmpeg0 \
+libsmpeg0 \
+flac dialog \
+libffi-dev \
+libssl-dev \
+portaudio19-dev \
+build-essential \
+libssl-dev \
+libffi-dev sox \
+libatlas3-base \
+mplayer \
+locales \
+libav-tools'''
+        self.extra_apt_packages=None
+        self.standard_pip_packages='''kalliope'''
+        self.extra_pip_packages=None
+        self.docker_image_profile_directory=None
+
+    def _generate_dockerfile(self):
+        """ Write the dockerfiel as a text file with all the appropriate
+            options.
+        """
+
+        with open(DOCKERFILE, 'w') as d:
+            d.write("FROM debian:" + DEBIAN_VERSION + "\n")
+            d.write("\n")
+
+            # Install all the packages
+            d.write("RUN apt-get update && apt-get install -y \\")
+            d.write(self.standard_apt_packages + "\n")
+            if self.extra_apt_packages is not None:
+                d.write("RUN apt-get install -y ")
+                d.write(self.extra_apt_packages + "\n")
+            d.write("\n")
+
+            # Set the locales.
+            d.write("RUN locale-gen en_US.UTF-8\n")
+            d.write("ENV LANG C.UTF-8\n")
+            d.write("\n")
+
+            # Set the timezone.
+            d.write("ENV TZ=" + TIMEZONE +"\n")
+            d.write("RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone\n")
+            d.write("\n")
+
+            # Install pip.
+            d.write("RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \\\n")
+            d.write("\t\t&& python get-pip.py\n")
+            d.write("\n")
+
+            # Install Kalliope.
+            d.write("RUN pip install " + self.standard_pip_packages + "\n")
+            if self.extra_pip_packages is not None:
+                d.write("RUN pip install " + self.extra_pip_packages + "\n")
+            d.write("\n")
+
+            # Setup initial environment.
+            d.write("ENV HOME " + CONTAINER_SHARED_HOME_DIRECTORY + "\n")
+#            d.write("RUN groupadd -g 1001 kalliope\n")
+#            d.write("RUN useradd -u 1000 -g 1001 --create-home --home-dir $HOME kalliope\n")
+#            d.write("RUN chown -R kalliope:kalliope $HOME/" + self.docker_image_profile_directory + "\n")
+            d.write("\n")
+
+            # Execute the Kalliope command.
+            d.write("WORKDIR $HOME/" + self.docker_image_profile_directory + "\n")
+#            d.write("USER kalliope\n")
+            d.write("CMD /bin/bash -c 'kalliope start'\n")
+            d.write("\n")
+
+
+    def _download_profile(self):
+        """ Download the specified profile. This can either be a default
+            language profile available on the Kalliope website or a
+            personalized one of your own.
+        """
+
+        command = ["git", "clone", KALLIOPE_PROFILE_GIT_URL]
+        shell_exec(command)
+
+    def _download_resources(self):
+        """ Download the specified list of resources
+        """
+
+        for resource_url in RESOURCE_LIST_GIT_URLS:
+            command = ["git", "clone", resource_url]
+            shell_exec(command)
+
+    def _get_resources_dependencies(self):
+        """ Inspect the install.yml file of each resource, and, return
+            a dict containing two lists: one for the apt package
+            manager and the other one for pip.
+        """
+
+        pip_dependencies = []
+        apt_dependencies = []
+
+        for resource_url in RESOURCE_LIST_GIT_URLS:
+            resource_directory = resource_url.split('/')[-1].replace('.git','')
+            with open("./" + resource_directory + "/install.yml") as f:
+                install = yaml.load(f)
+                for task in install[0]['tasks']:
+                    if 'apt' in task:
+                        apt_dependencies.append(task['apt']['name'])
+                    if 'pip' in task:
+                        pip_dependencies.append(task['pip']['name'])
+
+        return {'pip_dependencies': pip_dependencies, 'apt_dependencies': apt_dependencies}
+
+    def _install_resources(self):
+        """ Install the specified list of resources manually (without using
+            Kalliope).
+        """
+
+        for resource_url in RESOURCE_LIST_GIT_URLS:
+            resource_directory = resource_url.split('/')[-1].replace('.git','')
+
+            # To know where to put the resource we simply inspect the
+            # dna.yml file which lies inside every resource itself.
+            with open("./" + resource_directory + "/dna.yml") as f:
+                # yaml.load returns a dict.
+                dna = yaml.load(f)
+
+            resource_type = dna['type']
+            resource_name = dna['name']
+            profile_directory = KALLIOPE_PROFILE_GIT_URL.split('/')[-1].replace('.git','')
+
+            resource_final_parent_dir = profile_directory + "/resources/" + resource_type
+
+            # Equivalent to
+            # $ mkdir -p profile_directory/resource_type;
+            # $ cp -r resource_directory/* profile_directory/resource_type/resource_name
+            # This enables us to cache the repositories.
+            try:
+                shutil.copytree(resource_directory,
+                                resource_final_parent_dir + "/" + resource_name)
+            except FileExistsError:
+                print("Using cache")
+
+    def _install_profile(self):
+        """ Move the final profile to the shared directory.
+        """
+
+        profile_directory = KALLIOPE_PROFILE_GIT_URL.split('/')[-1].replace('.git','')
+        try:
+            shutil.copytree(profile_directory,
+                            LOCAL_SHARED_DIRECTORY + "/" + profile_directory)
+        except FileExistsError:
+            print("Using cache")
+        self.docker_image_profile_directory = profile_directory
+
+    def clean_cache(self,args):
+        """ Clean all files left behind.
+        """
+
+        # rm -rf profile resources
+        # TODO
+
+    def _populate_extra_dependencies(self,package_dependencies):
+        """ Transform the lists into space separated strings.
+        """
+
+        if package_dependencies['apt_dependencies'] != list():
+            self.extra_apt_packages = ' '.join(package_dependencies['apt_dependencies'])
+        if package_dependencies['pip_dependencies'] != list():
+            self.extra_pip_packages = ' '.join(package_dependencies['pip_dependencies'])
+
+    def process(self,args):
+        """ See the class description.
+        """
+
+        # if args.clean_cache:
+        #   self.clean_cache()
+        self._download_profile()
+        self._download_resources()
+        package_dependencies = self._get_resources_dependencies()
+        self._populate_extra_dependencies(package_dependencies)
+        self._install_resources()
+        self._install_profile()
+        self._generate_dockerfile()
+
+class Docker():
+
+    def __init__(self,args):
+        # Get the full path of the local directory.
+        self.full_path=os.path.abspath(".")
+        self.shared_filesystem_volume=self.full_path + "/" + LOCAL_SHARED_DIRECTORY + ":" + CONTAINER_SHARED_HOME_DIRECTORY
+        self.volumes =  {'a': "/dev/snd/pcmC0D0p:/dev/snd/pcmC0D0p",
+            'b': "/dev/snd/pcmC1D0c:/dev/snd/pcmC1D0c",
+            'c': "/dev/snd/controlC0:/dev/snd/controlC0",
+            'd': "/dev/snd/controlC1:/dev/snd/controlC1",
+            'shared_directory': self.shared_filesystem_volume}
+
+    def image_create(self,args):
+        """ Create the docker image.
+        """
+        command = ["docker", "build", "-t", DOCKER_IMAGE_TAG, "."]
+        shell_exec(command)
+
+    def image_delete(self,args):
+        """ Remove the docker image.
+        """
+
+        command = ["docker", "rmi", "-f", DOCKER_IMAGE_TAG]
+        shell_exec(command)
+
+    def container_run(self,args):
+        """ Run the docker image as a container.
+        """
+
+        command = ["docker", "run", "--rm=true", "--privileged",
+                   "-v", self.volumes['a'],
+                   "-v", self.volumes['b'],
+                   "-v", self.volumes['c'],
+                   "-v", self.volumes['d'],
+                   "-v", self.volumes['shared_directory'],
+                    DOCKER_IMAGE_TAG]
+        Popen(command)
+
+
+    def container_shell(self,args):
+        """ Open a shell to the container.
+        """
+
+        command = ["docker", "run", "-it",
+                   "--rm=true", "--privileged",
+                   "-v", self.volumes['a'],
+                   "-v", self.volumes['b'],
+                   "-v", self.volumes['c'],
+                   "-v", self.volumes['d'],
+                   "-v", self.volumes['shared_directory'],
+                   DOCKER_IMAGE_TAG,
+                   "/bin/bash"]
+
+        # Interactive connection
+        proc = subprocess.Popen(command)
+        outs, errs = proc.communicate()
+
+    def container_stop(self,args):
+        """ Stop all the containers corresponding to the kalliope
+            docker tag.
+        """
+
+        get_last_running_container_command = ["docker",
+            "ps","--format", '{{.ID}}\\t{{.Image}}']
+        running_containers = subprocess.run(get_last_running_container_command,
+                                            stdout=subprocess.PIPE)
+        # subprocess's stdout returns a byte string that needs to be
+        # transformed. We also need to remove the last element since
+        # it's an empty string
+        for container in running_containers.stdout.decode("utf-8").split('\n')[0:-1]:
+            sublist = (container.split('\t'))
+            if sublist[1] == DOCKER_IMAGE_TAG:
+                container_id = sublist[0]
+                stop_command = ["docker", "stop", container_id]
+                shell_exec(stop_command)
+
+
+class CliInterface():
+
+    def __init__(self):
+        self.docker = Docker(args=None)
+        self.setup = Setup(args=None)
+        self.parser = self.create_parser()
+
+    def create_parser(self):
+        parser = argparse.ArgumentParser(description='Kalliope Docker: run Kalliope inside a Docker container')
+        subparsers = parser.add_subparsers(dest='command')
+        subparsers.required = True
+
+        image_group = subparsers.add_parser('image',help="handle the Docker image")
+        container_group = subparsers.add_parser('container',help="act on the containers")
+        setup_group = subparsers.add_parser('setup',
+            help="Handle the dockefile, starter kit and resources such \
+                  as neurons, TTSs and STTs, based on the user preferences")
+
+        igp = image_group.add_subparsers(dest='command')
+        igp.required = True
+        cgp = container_group.add_subparsers(dest='command')
+        cgp.required = True
+        fgp = setup_group.add_subparsers(dest='command')
+        fgp.required = True
+
+        image_create_prs = igp.add_parser('create', help='create a new image')
+        image_delete_prs = igp.add_parser('delete', help='delete the existing images')
+
+        container_run_prs = cgp.add_parser('run', help='run Kalliope')
+        container_shell_prs = cgp.add_parser('shell', help='open an interactive shell')
+        container_stop_prs = cgp.add_parser('stop', help='exit and remove the running containers')
+
+        setup_generate_prs = fgp.add_parser('generate', help='Generate the dockerfile, starter kit and resources')
+
+        image_create_prs.set_defaults(func=self.docker.image_create)
+        image_delete_prs.set_defaults(func=self.docker.image_delete)
+
+        container_run_prs.set_defaults(func=self.docker.container_run)
+        container_shell_prs.set_defaults(func=self.docker.container_shell)
+        container_stop_prs.set_defaults(func=self.docker.container_stop)
+
+        setup_generate_prs.set_defaults(func=self.setup.process)
+
+        return parser
+
+
+def main():
+    cli = CliInterface()
+    args = cli.parser.parse_args()
+    result = args.func(args)
+
+
+if __name__ == '__main__':
+    main()
