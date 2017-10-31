@@ -34,7 +34,9 @@ Note
 Steps
 -----
 
-    <edit the variable at the top of the script>
+::
+
+    <edit the variables at the top of the script>    
     $ ./kalliope_docker.py setup generate
     $ ./kalliope_docker.py image create
     $ /kalliope_docker.py container run
