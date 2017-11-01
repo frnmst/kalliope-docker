@@ -39,7 +39,7 @@ Steps
     <edit the variables at the top of the script>    
     $ ./kalliope_docker.py setup generate
     $ ./kalliope_docker.py image create
-    $ /kalliope_docker.py container run
+    $ ./kalliope_docker.py container run
 
 Dependencies
 ------------
@@ -58,6 +58,8 @@ TODO
 - Create kalliope:kalliope unprivileged user and group.
     - ``kalliope start`` must be run by kalliope:kalliope and access the 
       shared volumes only.
+- Use the logger module instead of ``print`` to print the status of the current 
+  operation.
 
 Copyright and License
 =====================

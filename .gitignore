@@ -1,3 +1,10 @@
+# Ignore everything except the repository related stuff.
+*
+
+!kalliope_docker.py
+!README.lst
+!LICENSE.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

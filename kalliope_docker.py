@@ -31,8 +31,9 @@ from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired
 
 
 KALLIOPE_PROFILE_GIT_URL='https://github.com/kalliope-project/kalliope_starter_it.git'
+# SSH git repos only work with ssh://user@addr_hostmname/full_path
 # Resources can be: neurons, TTS, STT.
-RESOURCE_LIST_GIT_URLS=['https://github.com/Ultchad/kalliope-espeak.git']
+RESOURCE_LIST_GIT_URLS=['https://github.com/Ultchad/kalliope-espeak.git','https://github.com/kalliope-project/kalliope_neuron_wikipedia.git']
 DOCKERFILE='Dockerfile'
 DEBIAN_VERSION='stretch'
 DOCKER_IMAGE_TAG="kalliope-debian"
@@ -80,8 +81,12 @@ libav-tools'''
         self.extra_pip_packages=None
         self.docker_image_profile_directory=None
 
+    def _get_directory_name_from_git_url(self,url):
+        assert isinstance(url,str)
+        return url.split('/')[-1].replace('.git','')
+
     def _generate_dockerfile(self):
-        """ Write the dockerfiel as a text file with all the appropriate
+        """ Write the dockerfile as a text file with all the appropriate
             options.
         """
 
@@ -159,7 +164,7 @@ libav-tools'''
         apt_dependencies = []
 
         for resource_url in RESOURCE_LIST_GIT_URLS:
-            resource_directory = resource_url.split('/')[-1].replace('.git','')
+            resource_directory = self._get_directory_name_from_git_url(resource_url)
             with open("./" + resource_directory + "/install.yml") as f:
                 install = yaml.load(f)
                 for task in install[0]['tasks']:
@@ -176,7 +181,7 @@ libav-tools'''
         """
 
         for resource_url in RESOURCE_LIST_GIT_URLS:
-            resource_directory = resource_url.split('/')[-1].replace('.git','')
+            resource_directory = self._get_directory_name_from_git_url(resource_url)
 
             # To know where to put the resource we simply inspect the
             # dna.yml file which lies inside every resource itself.
@@ -185,8 +190,11 @@ libav-tools'''
                 dna = yaml.load(f)
 
             resource_type = dna['type']
+            # Patch singular to plural.
+            if resource_type == 'neuron':
+                resource_type = 'neurons'
             resource_name = dna['name']
-            profile_directory = KALLIOPE_PROFILE_GIT_URL.split('/')[-1].replace('.git','')
+            profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
 
             resource_final_parent_dir = profile_directory + "/resources/" + resource_type
 
@@ -204,20 +212,13 @@ libav-tools'''
         """ Move the final profile to the shared directory.
         """
 
-        profile_directory = KALLIOPE_PROFILE_GIT_URL.split('/')[-1].replace('.git','')
+        profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
         try:
             shutil.copytree(profile_directory,
                             LOCAL_SHARED_DIRECTORY + "/" + profile_directory)
         except FileExistsError:
             print("Using cache")
         self.docker_image_profile_directory = profile_directory
-
-    def clean_cache(self,args):
-        """ Clean all files left behind.
-        """
-
-        # rm -rf profile resources
-        # TODO
 
     def _populate_extra_dependencies(self,package_dependencies):
         """ Transform the lists into space separated strings.
@@ -232,8 +233,6 @@ libav-tools'''
         """ See the class description.
         """
 
-        # if args.clean_cache:
-        #   self.clean_cache()
         self._download_profile()
         self._download_resources()
         package_dependencies = self._get_resources_dependencies()
@@ -241,6 +240,23 @@ libav-tools'''
         self._install_resources()
         self._install_profile()
         self._generate_dockerfile()
+
+    def clear_cache(self,args):
+        """ Remove all files left behind but not the shared directory.
+        """
+
+        # rm -rf profile
+        profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
+        shutil.rmtree(profile_directory, ignore_errors=True)
+
+        # rm Dockerfile
+        os.remove(DOCKERFILE)
+
+        # for r in resources; do rm -rf r; done
+        for resource_url in RESOURCE_LIST_GIT_URLS:
+            resource_directory = self._get_directory_name_from_git_url(resource_url)
+            shutil.rmtree(resource_directory, ignore_errors=True)
+
 
 class Docker():
 
@@ -258,7 +274,10 @@ class Docker():
         """ Create the docker image.
         """
         command = ["docker", "build", "-t", DOCKER_IMAGE_TAG, "."]
-        shell_exec(command)
+#        shell_exec(command)
+        proc = subprocess.Popen(command)
+        outs, errs = proc.communicate()
+
 
     def image_delete(self,args):
         """ Remove the docker image.
@@ -351,7 +370,8 @@ class CliInterface():
         container_shell_prs = cgp.add_parser('shell', help='open an interactive shell')
         container_stop_prs = cgp.add_parser('stop', help='exit and remove the running containers')
 
-        setup_generate_prs = fgp.add_parser('generate', help='Generate the dockerfile, starter kit and resources')
+        setup_create_prs = fgp.add_parser('create', help='create the dockerfile, starter kit, resources and shared directory')
+        setup_delete_prs = fgp.add_parser('delete', help='delete the dockerfile, starter kit and resources')
 
         image_create_prs.set_defaults(func=self.docker.image_create)
         image_delete_prs.set_defaults(func=self.docker.image_delete)
@@ -360,7 +380,8 @@ class CliInterface():
         container_shell_prs.set_defaults(func=self.docker.container_shell)
         container_stop_prs.set_defaults(func=self.docker.container_stop)
 
-        setup_generate_prs.set_defaults(func=self.setup.process)
+        setup_create_prs.set_defaults(func=self.setup.process)
+        setup_delete_prs.set_defaults(func=self.setup.clear_cache)
 
         return parser
 
