@@ -33,7 +33,8 @@ from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired
 KALLIOPE_PROFILE_GIT_URL='https://github.com/kalliope-project/kalliope_starter_it.git'
 # SSH git repos only work with ssh://user@addr_hostmname/full_path
 # Resources can be: neurons, TTS, STT.
-RESOURCE_LIST_GIT_URLS=['https://github.com/Ultchad/kalliope-espeak.git','https://github.com/kalliope-project/kalliope_neuron_wikipedia.git']
+RESOURCE_LIST_GIT_URLS=['https://github.com/Ultchad/kalliope-espeak.git',
+    'https://github.com/kalliope-project/kalliope_neuron_wikipedia.git']
 DOCKERFILE='Dockerfile'
 DEBIAN_VERSION='stretch'
 DOCKER_IMAGE_TAG="kalliope-debian"
@@ -80,9 +81,24 @@ libav-tools'''
         self.extra_pip_packages=None
         self.docker_image_profile_directory=None
 
+
     def _get_directory_name_from_git_url(self,url):
         assert isinstance(url,str)
         return url.split('/')[-1].replace('.git','')
+
+    def _load_yaml_file(self,path):
+        """ Returns a dict containing the yaml data if the file exists and
+            contains no errors. Raise an exception otherwise."""
+
+        assert isinstance(path,str)
+        try:
+            with open(path, 'r') as f:
+                try:
+                    return yaml.load(f)
+                except yaml.YAMLError:
+                    raise
+        except FileNotFoundError:
+            raise
 
     def _generate_dockerfile(self):
         """ Write the dockerfile as a text file with all the appropriate
@@ -143,7 +159,7 @@ libav-tools'''
         """
 
         command = ["git", "clone", KALLIOPE_PROFILE_GIT_URL]
-        shell_exec(command)
+        outs, errs = subprocess.Popen(command).communicate()
 
     def _download_resources(self):
         """ Download the specified list of resources
@@ -151,7 +167,7 @@ libav-tools'''
 
         for resource_url in RESOURCE_LIST_GIT_URLS:
             command = ["git", "clone", resource_url]
-            shell_exec(command)
+            outs, errs = subprocess.Popen(command).communicate()
 
     def _get_resources_dependencies(self):
         """ Inspect the install.yml file of each resource, and, return
@@ -164,19 +180,28 @@ libav-tools'''
 
         for resource_url in RESOURCE_LIST_GIT_URLS:
             resource_directory = self._get_directory_name_from_git_url(resource_url)
-            with open("./" + resource_directory + "/install.yml") as f:
-                install = yaml.load(f)
-                for task in install[0]['tasks']:
-                    if 'apt' in task:
-                        apt_dependencies.append(task['apt']['name'])
-                    if 'pip' in task:
-                        pip_dependencies.append(task['pip']['name'])
+            install = self._load_yaml_file("./" + resource_directory + "/install.yml")
+            for task in install[0]['tasks']:
+                if 'apt' in task:
+                    apt_dependencies.append(task['apt']['name'])
+                if 'pip' in task:
+                    pip_dependencies.append(task['pip']['name'])
 
         return {'pip_dependencies': pip_dependencies, 'apt_dependencies': apt_dependencies}
 
+    def _get_resource_type_path(self, resource_type):
+        """ Return the relative path of the input resource type.
+        """
+
+        # We need to open the settings.yml file.
+        settings = self._load_yaml_file(
+            self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL) + '/settings.yml')
+        return settings['resource_directory'][resource_type]
+
     def _install_resources(self):
         """ Install the specified list of resources manually (without using
-            Kalliope).
+            Kalliope). This method moves the files in the cloned profile
+            directory (which will not be the one in the shared volume).
         """
 
         for resource_url in RESOURCE_LIST_GIT_URLS:
@@ -184,18 +209,12 @@ libav-tools'''
 
             # To know where to put the resource we simply inspect the
             # dna.yml file which lies inside every resource itself.
-            with open("./" + resource_directory + "/dna.yml") as f:
-                # yaml.load returns a dict.
-                dna = yaml.load(f)
-
+            dna = self._load_yaml_file("./" + resource_directory + "/dna.yml")
             resource_type = dna['type']
-            # Patch singular to plural.
-            if resource_type == 'neuron':
-                resource_type = 'neurons'
             resource_name = dna['name']
+            resource_type_relative_path = self._get_resource_type_path(resource_type)
             profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
-
-            resource_final_parent_dir = profile_directory + "/resources/" + resource_type
+            resource_final_parent_dir = profile_directory + "/" + resource_type_relative_path
 
             # Equivalent to
             # $ mkdir -p profile_directory/resource_type;
@@ -227,6 +246,10 @@ libav-tools'''
             self.extra_apt_packages = ' '.join(package_dependencies['apt_dependencies'])
         if package_dependencies['pip_dependencies'] != list():
             self.extra_pip_packages = ' '.join(package_dependencies['pip_dependencies'])
+
+    #
+    # The following are the only accessible methods by the user.
+    #
 
     def process(self,args):
         """ See the class description.
