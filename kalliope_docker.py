@@ -42,11 +42,10 @@ CONTAINER_SHARED_HOME_DIRECTORY="/home/kalliope"
 TIMEZONE="Europe/Rome"
 
 
-# See https://stackoverflow.com/a/28319191
-def shell_exec(cmd):
-    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
-        for line in p.stdout:
-            print(line, end='')
+class Configuration():
+
+    pass
+
 
 class Setup():
     """ Generate the Dockerfile according to the user configuration.
@@ -274,17 +273,14 @@ class Docker():
         """ Create the docker image.
         """
         command = ["docker", "build", "-t", DOCKER_IMAGE_TAG, "."]
-#        shell_exec(command)
-        proc = subprocess.Popen(command)
-        outs, errs = proc.communicate()
-
+        outs, errs = subprocess.Popen(command).communicate()
 
     def image_delete(self,args):
         """ Remove the docker image.
         """
 
         command = ["docker", "rmi", "-f", DOCKER_IMAGE_TAG]
-        shell_exec(command)
+        outs, errs = subprocess.Popen(command).communicate()
 
     def container_run(self,args):
         """ Run the docker image as a container.
@@ -315,8 +311,7 @@ class Docker():
                    "/bin/bash"]
 
         # Interactive connection
-        proc = subprocess.Popen(command)
-        outs, errs = proc.communicate()
+        outs, errs = subprocess.Popen(command).communicate()
 
     def container_stop(self,args):
         """ Stop all the containers corresponding to the kalliope
@@ -335,7 +330,7 @@ class Docker():
             if sublist[1] == DOCKER_IMAGE_TAG:
                 container_id = sublist[0]
                 stop_command = ["docker", "stop", container_id]
-                shell_exec(stop_command)
+                outs, errs = subprocess.Popen(stop_command).communicate()
 
 
 class CliInterface():
