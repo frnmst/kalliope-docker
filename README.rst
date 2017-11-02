@@ -52,7 +52,7 @@ Dependencies
 TODO
 ----
 
-- User configureation file instead of static variables.
+- User configuration file instead of static variables.
 - Code refactoring
 - Full documentation on Sphinx
 - Create kalliope:kalliope unprivileged user and group.
