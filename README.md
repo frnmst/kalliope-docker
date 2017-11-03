@@ -2,7 +2,7 @@
 
 Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker container
 
-[![asciicast](https://asciinema.org/a/145756.png)](https://asciinema.org/a/https://asciinema.org/a/145756)
+[![asciicast](https://asciinema.org/a/145756.png)](https://asciinema.org/a/145756)
 
 ## Reasons
 
