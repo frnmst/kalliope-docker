@@ -1,13 +1,13 @@
 Kalliope Docker Debian
 ======================
 
-Run Kalliope inside a Debian Docker container
+Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker container
 
 Reasons
 -------
 
-- Debian is not your main GNU/Linux distribution
-- Testing with a real environment
+- Debian-based distros are not your daily GNU/Linux distributions.
+- Deploy Kalliope in a matter of minutes.
 
 Features
 --------
@@ -18,8 +18,13 @@ Features
 - Network access
     - LAN, using LAN addresses directly
     - Internet
-- No proprietary dependencies (notably: no svox, but instead espeak installed 
-  by default.)
+- No proprietary dependencies (notably: no ``libttspico-utils``)
+
+How to
+------
+
+Define profile and resources git links and these will be already configured 
+when Kalliope starts.
 
 Note
 ----
@@ -41,6 +46,8 @@ Steps
     $ ./kalliope_docker.py image create
     $ ./kalliope_docker.py container run
 
+If no errors are reported, Kalliope should be ready for orders.
+
 Dependencies
 ------------
 
@@ -60,6 +67,7 @@ TODO
       shared volumes only.
 - Use the logger module instead of ``print`` to print the status of the current 
   operation.
+- Check if there is full network access.
 
 Copyright and License
 =====================
