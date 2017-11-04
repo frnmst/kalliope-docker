@@ -54,7 +54,6 @@ If no errors are reported, Kalliope should be ready for orders.
 
 ## TODO
 
-- User configuration file instead of static variables.
 - Code refactoring
 - Full documentation on Sphinx
 - Create kalliope:kalliope unprivileged user and group.
