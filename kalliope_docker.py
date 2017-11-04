@@ -32,26 +32,23 @@ import subprocess
 from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired
 
 
-#####################
-# Global variables  #
-#####################
-
-KALLIOPE_PROFILE_GIT_URL=''
-# SSH git repos only work with ssh://user@addr_hostmname/full_path
-# Resources can be: neurons, TTS, STT.
-RESOURCE_LIST_GIT_URLS=[]
-DOCKERFILE=''
-DEBIAN_VERSION=''
-DOCKER_IMAGE_TAG=''
-LOCAL_SHARED_DIRECTORY=''
-CONTAINER_SHARED_HOME_DIRECTORY=''
-TIMEZONE=''
-CMU_SPHINX=''
-
 class Configuration():
 
     def __init__(self):
         self.cfg_file = 'kalliope_docker.conf'
+
+        self.KALLIOPE_PROFILE_GIT_URL = ''
+        # SSH git repos only work with ssh://user@addr_hostmname/full_path
+        # Resources can be: neurons, TTS, STT.
+        self.RESOURCE_LIST_GIT_URLS=[]
+        self.DOCKERFILE=''
+        self.DEBIAN_VERSION=''
+        self.DOCKER_IMAGE_TAG=''
+        self.LOCAL_SHARED_DIRECTORY=''
+        self.CONTAINER_SHARED_HOME_DIRECTORY=''
+        self.TIMEZONE=''
+        self.CMU_SPHINX=''
+
         self.parse()
 
     def parse(self):
@@ -60,7 +57,7 @@ class Configuration():
         try:
             config.read(self.cfg_file)
 
-            KALLIOPE_PROFILE_GIT_URL = config.get('Profile',
+            self.KALLIOPE_PROFILE_GIT_URL = config.get('Profile',
                                                   'git url',
                                                   fallback='https://github.com/kalliope-project/kalliope_starter_en')
 
@@ -69,37 +66,36 @@ class Configuration():
             if 'Resources' in config:
                 resources_items = config.items('Resources')
                 for key, resource_git_url in resources_items:
-                    RESOURCE_LIST_GIT_URLS.append(resource_git_url)
+                    self.RESOURCE_LIST_GIT_URLS.append(resource_git_url)
 
-            TIMEZONE = config.get('Environment',
-                                  'Timezone',
-                                  fallback='America/New_York')
+            self.TIMEZONE = config.get('Environment',
+                                     'Timezone',
+                                      fallback='America/New_York')
 
-            DOCKER_IMAGE_TAG = config.get('Docker',
+            self.DOCKER_IMAGE_TAG = config.get('Docker',
                                           'Docker image tag',
                                           fallback='kalliope-docker')
 
-            DOCKERFILE = config.get('Docker',
+            self.DOCKERFILE = config.get('Docker',
                                     'Dockerfile',
                                     fallback='Dockerfile')
 
-            LOCAL_SHARED_DIRECTORY = config.get('Docker',
+            self.LOCAL_SHARED_DIRECTORY = config.get('Docker',
                                                 'Local shared directory',
                                                 fallback='kalliope-shared')
 
-            CONTAINER_SHARED_HOME_DIRECTORY = config.get('Docker',
+            self.CONTAINER_SHARED_HOME_DIRECTORY = config.get('Docker',
                                                          'Container shared home directory',
                                                          fallback='/home/kalliope')
 
-            DEBIAN_VERSION = config.get('Docker',
+            self.DEBIAN_VERSION = config.get('Docker',
                                         'Debian version',
                                         fallback='stretch')
 
-            CMU_SPHINX = config.getboolean('Docker',
+            self.CMU_SPHINX = config.getboolean('Docker',
                                         'Enable CMU Sphinx',
                                         fallback=False)
 
-            return config
         except configparser.Error:
             raise
 
@@ -110,7 +106,7 @@ class Setup():
         <https://github.com/kalliope-project/kalliope/blob/master/Docs/contributing.md>
     """
 
-    def __init__(self,args):
+    def __init__(self):
         """ Define some constants and user configuration for the Dockerfile.
         """
 
@@ -171,8 +167,8 @@ libav-tools'''
             options.
         """
         try:
-            with open(DOCKERFILE, 'w') as d:
-                d.write("FROM debian:" + DEBIAN_VERSION + "\n")
+            with open(configuration.DOCKERFILE, 'w') as d:
+                d.write("FROM debian:" + configuration.DEBIAN_VERSION + "\n")
                 d.write("\n")
 
                 # Install all the packages
@@ -189,7 +185,7 @@ libav-tools'''
                 d.write("\n")
 
                 # Set the timezone.
-                d.write("ENV TZ=" + TIMEZONE +"\n")
+                d.write("ENV TZ=" + configuration.TIMEZONE +"\n")
                 d.write("RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone\n")
                 d.write("\n")
 
@@ -205,7 +201,7 @@ libav-tools'''
                 d.write("\n")
 
                 # CMU SPHINX
-                if CMU_SPHINX:
+                if configuration.CMU_SPHINX:
                     pass
                     # See
                     # https://github.com/Uberi/speech_recognition/blob/master/reference/pocketsphinx.rst#installing-other-languages
@@ -215,7 +211,7 @@ libav-tools'''
                     # d.write("RUN unzip -o "$SR_LIB/lang-LANG.zip" -d "$SR_LIB")
 
                 # Setup initial environment.
-                d.write("ENV HOME " + CONTAINER_SHARED_HOME_DIRECTORY + "\n")
+                d.write("ENV HOME " + configuration.CONTAINER_SHARED_HOME_DIRECTORY + "\n")
     #            d.write("RUN groupadd -g 1001 kalliope\n")
     #            d.write("RUN useradd -u 1000 -g 1001 --create-home --home-dir $HOME kalliope\n")
     #            d.write("RUN chown -R kalliope:kalliope $HOME/" + self.docker_image_profile_directory + "\n")
@@ -235,14 +231,14 @@ libav-tools'''
             personalized one of your own.
         """
 
-        command = ["git", "clone", KALLIOPE_PROFILE_GIT_URL]
+        command = ["git", "clone", configuration.KALLIOPE_PROFILE_GIT_URL]
         outs, errs = subprocess.Popen(command).communicate()
 
     def _download_resources(self):
         """ Download the specified list of resources
         """
 
-        for resource_url in RESOURCE_LIST_GIT_URLS:
+        for resource_url in configuration.RESOURCE_LIST_GIT_URLS:
             command = ["git", "clone", resource_url]
             outs, errs = subprocess.Popen(command).communicate()
 
@@ -255,7 +251,7 @@ libav-tools'''
         pip_dependencies = []
         apt_dependencies = []
 
-        for resource_url in RESOURCE_LIST_GIT_URLS:
+        for resource_url in configuration.RESOURCE_LIST_GIT_URLS:
             resource_directory = self._get_directory_name_from_git_url(resource_url)
             install = self._load_yaml_file("./" + resource_directory + "/install.yml")
             for task in install[0]['tasks']:
@@ -272,7 +268,7 @@ libav-tools'''
 
         # We need to open the settings.yml file.
         settings = self._load_yaml_file(
-            self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL) + '/settings.yml')
+            self._get_directory_name_from_git_url(configuration.KALLIOPE_PROFILE_GIT_URL) + '/settings.yml')
         return settings['resource_directory'][resource_type]
 
     def _install_resources(self):
@@ -281,7 +277,7 @@ libav-tools'''
             directory (which will not be the one in the shared volume).
         """
 
-        for resource_url in RESOURCE_LIST_GIT_URLS:
+        for resource_url in configuration.RESOURCE_LIST_GIT_URLS:
             resource_directory = self._get_directory_name_from_git_url(resource_url)
 
             # To know where to put the resource we simply inspect the
@@ -290,7 +286,7 @@ libav-tools'''
             resource_type = dna['type']
             resource_name = dna['name']
             resource_type_relative_path = self._get_resource_type_path(resource_type)
-            profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
+            profile_directory = self._get_directory_name_from_git_url(configuration.KALLIOPE_PROFILE_GIT_URL)
             resource_final_parent_dir = profile_directory + "/" + resource_type_relative_path
 
             # Equivalent to
@@ -307,10 +303,10 @@ libav-tools'''
         """ Move the final profile to the shared directory.
         """
 
-        profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
+        profile_directory = self._get_directory_name_from_git_url(configuration.KALLIOPE_PROFILE_GIT_URL)
         try:
             shutil.copytree(profile_directory,
-                            LOCAL_SHARED_DIRECTORY + "/" + profile_directory)
+                            configuration.LOCAL_SHARED_DIRECTORY + "/" + profile_directory)
         except FileExistsError:
             print("Using cache")
         self.docker_image_profile_directory = profile_directory
@@ -323,7 +319,7 @@ libav-tools'''
             self.extra_apt_packages = ' '.join(package_dependencies['apt_dependencies'])
         if package_dependencies['pip_dependencies'] != list():
             self.extra_pip_packages = ' '.join(package_dependencies['pip_dependencies'])
-        if CMU_SPHINX:
+        if configuration.CMU_SPHINX:
             # Leave an extra space so sub-strings are not stuck together.
             self.extra_apt_packages += " swig libpulse-dev unzip"
             self.extra_pip_packages += " pocketsphinx"
@@ -349,14 +345,14 @@ libav-tools'''
         """
 
         # rm -rf profile
-        profile_directory = self._get_directory_name_from_git_url(KALLIOPE_PROFILE_GIT_URL)
+        profile_directory = self._get_directory_name_from_git_url(configuration.KALLIOPE_PROFILE_GIT_URL)
         shutil.rmtree(profile_directory, ignore_errors=True)
 
         # rm Dockerfile
-        os.remove(DOCKERFILE)
+        os.remove(configuration.DOCKERFILE)
 
         # for r in resources; do rm -rf r; done
-        for resource_url in RESOURCE_LIST_GIT_URLS:
+        for resource_url in configuration.RESOURCE_LIST_GIT_URLS:
             resource_directory = self._get_directory_name_from_git_url(resource_url)
             shutil.rmtree(resource_directory, ignore_errors=True)
 
@@ -365,10 +361,10 @@ libav-tools'''
 
 class Docker():
 
-    def __init__(self,args):
+    def __init__(self):
         # Get the full path of the local directory.
         self.full_path=os.path.abspath(".")
-        self.shared_filesystem_volume=self.full_path + "/" + LOCAL_SHARED_DIRECTORY + ":" + CONTAINER_SHARED_HOME_DIRECTORY
+        self.shared_filesystem_volume=self.full_path + "/" + configuration.LOCAL_SHARED_DIRECTORY + ":" + configuration.CONTAINER_SHARED_HOME_DIRECTORY
         self.volumes =  {'a': "/dev/snd/pcmC0D0p:/dev/snd/pcmC0D0p",
             'b': "/dev/snd/pcmC1D0c:/dev/snd/pcmC1D0c",
             'c': "/dev/snd/controlC0:/dev/snd/controlC0",
@@ -378,14 +374,14 @@ class Docker():
     def image_create(self,args):
         """ Create the docker image.
         """
-        command = ["docker", "build", "-t", DOCKER_IMAGE_TAG, "."]
+        command = ["docker", "build", "-t", configuration.DOCKER_IMAGE_TAG, "."]
         outs, errs = subprocess.Popen(command).communicate()
 
     def image_delete(self,args):
         """ Remove the docker image.
         """
 
-        command = ["docker", "rmi", "-f", DOCKER_IMAGE_TAG]
+        command = ["docker", "rmi", "-f", configuration.DOCKER_IMAGE_TAG]
         outs, errs = subprocess.Popen(command).communicate()
 
     def container_run(self,args):
@@ -398,7 +394,7 @@ class Docker():
                    "-v", self.volumes['c'],
                    "-v", self.volumes['d'],
                    "-v", self.volumes['shared_directory'],
-                    DOCKER_IMAGE_TAG]
+                    configuration.DOCKER_IMAGE_TAG]
         Popen(command)
 
 
@@ -413,7 +409,7 @@ class Docker():
                    "-v", self.volumes['c'],
                    "-v", self.volumes['d'],
                    "-v", self.volumes['shared_directory'],
-                   DOCKER_IMAGE_TAG,
+                   configuration.DOCKER_IMAGE_TAG,
                    "/bin/bash"]
 
         # Interactive connection
@@ -433,18 +429,20 @@ class Docker():
         # it's an empty string
         for container in running_containers.stdout.decode("utf-8").split('\n')[0:-1]:
             sublist = (container.split('\t'))
-            if sublist[1] == DOCKER_IMAGE_TAG:
+            if sublist[1] == configuration.DOCKER_IMAGE_TAG:
                 container_id = sublist[0]
                 stop_command = ["docker", "stop", container_id]
                 outs, errs = subprocess.Popen(stop_command).communicate()
 
 
+configuration = None
 class CliInterface():
 
     def __init__(self):
-        self.configuration = Configuration()
-        self.docker = Docker(args=None)
-        self.setup = Setup(args=None)
+        global configuration
+        configuration = Configuration()
+        self.docker = Docker()
+        self.setup = Setup()
         self.parser = self.create_parser()
 
     def create_parser(self):
@@ -501,6 +499,7 @@ def main():
         result = args.func(args)
         retcode = 0
     except FileNotFoundError as e:
+        print(e)
         retcode = 1
     sys.exit(retcode)
 
