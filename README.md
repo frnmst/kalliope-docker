@@ -39,9 +39,9 @@ Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker conta
 2. Edit it based on your needs. Variables are self explanatory.
 3. Then:
 
-    $ ./kalliope_docker.py setup generate
-    $ ./kalliope_docker.py image create
-    $ ./kalliope_docker.py container run
+        $ ./kalliope_docker.py setup generate
+        $ ./kalliope_docker.py image create
+        $ ./kalliope_docker.py container run
 
 If no errors are reported, Kalliope should be ready for orders.
 
