@@ -24,6 +24,7 @@
 
 import yaml
 import os
+import sys
 import shutil
 import argparse
 import subprocess
@@ -81,8 +82,15 @@ libav-tools'''
         self.extra_pip_packages=None
         self.docker_image_profile_directory=None
 
+    ###################
+    # Private methods #
+    ###################
 
     def _get_directory_name_from_git_url(self,url):
+        """ Given a git url, return the repository name, which is considered to
+            be the token after the last '/' character.
+        """
+
         assert isinstance(url,str)
         return url.split('/')[-1].replace('.git','')
 
@@ -100,67 +108,72 @@ libav-tools'''
         except FileNotFoundError:
             raise
 
+    #######
+    #######
+    #######
+
     def _generate_dockerfile(self):
         """ Write the dockerfile as a text file with all the appropriate
             options.
         """
+        try:
+            with open(DOCKERFILE, 'w') as d:
+                d.write("FROM debian:" + DEBIAN_VERSION + "\n")
+                d.write("\n")
 
-        with open(DOCKERFILE, 'w') as d:
-            d.write("FROM debian:" + DEBIAN_VERSION + "\n")
-            d.write("\n")
+                # Install all the packages
+                d.write("RUN apt-get update && apt-get install -y \\")
+                d.write(self.standard_apt_packages + "\n")
+                if self.extra_apt_packages is not None:
+                    d.write("RUN apt-get install -y ")
+                    d.write(self.extra_apt_packages + "\n")
+                d.write("\n")
 
-            # Install all the packages
-            d.write("RUN apt-get update && apt-get install -y \\")
-            d.write(self.standard_apt_packages + "\n")
-            if self.extra_apt_packages is not None:
-                d.write("RUN apt-get install -y ")
-                d.write(self.extra_apt_packages + "\n")
-            d.write("\n")
+                # Set the locales.
+                d.write("RUN locale-gen en_US.UTF-8\n")
+                d.write("ENV LANG C.UTF-8\n")
+                d.write("\n")
 
-            # Set the locales.
-            d.write("RUN locale-gen en_US.UTF-8\n")
-            d.write("ENV LANG C.UTF-8\n")
-            d.write("\n")
+                # Set the timezone.
+                d.write("ENV TZ=" + TIMEZONE +"\n")
+                d.write("RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone\n")
+                d.write("\n")
 
-            # Set the timezone.
-            d.write("ENV TZ=" + TIMEZONE +"\n")
-            d.write("RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone\n")
-            d.write("\n")
+                # Install pip.
+                d.write("RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \\\n")
+                d.write("\t\t&& python get-pip.py\n")
+                d.write("\n")
 
-            # Install pip.
-            d.write("RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \\\n")
-            d.write("\t\t&& python get-pip.py\n")
-            d.write("\n")
+                # Install Kalliope.
+                d.write("RUN pip install " + self.standard_pip_packages + "\n")
+                if self.extra_pip_packages is not None:
+                    d.write("RUN pip install " + self.extra_pip_packages + "\n")
+                d.write("\n")
 
-            # Install Kalliope.
-            d.write("RUN pip install " + self.standard_pip_packages + "\n")
-            if self.extra_pip_packages is not None:
-                d.write("RUN pip install " + self.extra_pip_packages + "\n")
-            d.write("\n")
+                # CMU SPHINX
+                if CMU_SPHINX:
+                    pass
+                    # See
+                    # https://github.com/Uberi/speech_recognition/blob/master/reference/pocketsphinx.rst#installing-other-languages
 
-            # CMU SPHINX
-            if CMU_SPHINX:
-                pass
-                # See
-                # https://github.com/Uberi/speech_recognition/blob/master/reference/pocketsphinx.rst#installing-other-languages
+                    #  d.write("ENV SR_LIB=$(python -c "import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))")
+                    # d.write("RUN wget <language profile link, read from profile's settings.yml> ")
+                    # d.write("RUN unzip -o "$SR_LIB/lang-LANG.zip" -d "$SR_LIB")
 
-                #  d.write("ENV SR_LIB=$(python -c "import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))")
-                # d.write("RUN wget <language profile link, read from profile's settings.yml> ")
-                # d.write("RUN unzip -o "$SR_LIB/lang-LANG.zip" -d "$SR_LIB")
+                # Setup initial environment.
+                d.write("ENV HOME " + CONTAINER_SHARED_HOME_DIRECTORY + "\n")
+    #            d.write("RUN groupadd -g 1001 kalliope\n")
+    #            d.write("RUN useradd -u 1000 -g 1001 --create-home --home-dir $HOME kalliope\n")
+    #            d.write("RUN chown -R kalliope:kalliope $HOME/" + self.docker_image_profile_directory + "\n")
+                d.write("\n")
 
-            # Setup initial environment.
-            d.write("ENV HOME " + CONTAINER_SHARED_HOME_DIRECTORY + "\n")
-#            d.write("RUN groupadd -g 1001 kalliope\n")
-#            d.write("RUN useradd -u 1000 -g 1001 --create-home --home-dir $HOME kalliope\n")
-#            d.write("RUN chown -R kalliope:kalliope $HOME/" + self.docker_image_profile_directory + "\n")
-            d.write("\n")
-
-            # Execute the Kalliope command.
-            d.write("WORKDIR $HOME/" + self.docker_image_profile_directory + "\n")
-#            d.write("USER kalliope\n")
-            d.write("CMD /bin/bash -c 'kalliope start'\n")
-            d.write("\n")
-
+                # Execute the Kalliope command.
+                d.write("WORKDIR $HOME/" + self.docker_image_profile_directory + "\n")
+    #            d.write("USER kalliope\n")
+                d.write("CMD /bin/bash -c 'kalliope start'\n")
+                d.write("\n")
+        except OSError:
+            raise
 
     def _download_profile(self):
         """ Download the specified profile. This can either be a default
@@ -293,6 +306,8 @@ libav-tools'''
             resource_directory = self._get_directory_name_from_git_url(resource_url)
             shutil.rmtree(resource_directory, ignore_errors=True)
 
+    # TODO
+    # def clear_shared_volume(self,args)
 
 class Docker():
 
@@ -405,6 +420,7 @@ class CliInterface():
         container_stop_prs = cgp.add_parser('stop', help='exit and remove the running containers')
 
         setup_create_prs = fgp.add_parser('create', help='create the dockerfile, starter kit, resources and shared directory')
+        setup_generate_prs = fgp.add_parser('generate', help='alias for the option create')
         setup_delete_prs = fgp.add_parser('delete', help='delete the dockerfile, starter kit and resources')
 
         image_create_prs.set_defaults(func=self.docker.image_create)
@@ -417,6 +433,7 @@ class CliInterface():
         container_stop_prs.set_defaults(func=self.docker.container_stop)
 
         setup_create_prs.set_defaults(func=self.setup.process)
+        setup_generate_prs.set_defaults(func=self.setup.process)
         setup_delete_prs.set_defaults(func=self.setup.clear_cache)
 
         return parser
@@ -425,8 +442,12 @@ class CliInterface():
 def main():
     cli = CliInterface()
     args = cli.parser.parse_args()
-    result = args.func(args)
-
+    try:
+        result = args.func(args)
+        retcode = 0
+    except FileNotFoundError as e:
+        retcode = 1
+    sys.exit(retcode)
 
 if __name__ == '__main__':
     main()
