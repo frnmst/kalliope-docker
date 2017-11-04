@@ -75,9 +75,13 @@ libffi-dev sox \
 libatlas3-base \
 mplayer \
 locales \
-libav-tools'''
+libav-tools \
+swig \
+libpulse-dev'''
         self.extra_apt_packages=None
-        self.standard_pip_packages='''kalliope'''
+        self.standard_pip_packages='''
+kalliope \
+pocketsphinx'''
         self.extra_pip_packages=None
         self.docker_image_profile_directory=None
 
