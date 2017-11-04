@@ -27,27 +27,81 @@ import os
 import sys
 import shutil
 import argparse
+import configparser
 import subprocess
 from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired
 
 
-KALLIOPE_PROFILE_GIT_URL='https://github.com/kalliope-project/kalliope_starter_it.git'
+#####################
+# Global variables  #
+#####################
+
+KALLIOPE_PROFILE_GIT_URL=''
 # SSH git repos only work with ssh://user@addr_hostmname/full_path
 # Resources can be: neurons, TTS, STT.
-RESOURCE_LIST_GIT_URLS=['https://github.com/Ultchad/kalliope-espeak.git',
-    'https://github.com/kalliope-project/kalliope_neuron_wikipedia.git']
-DOCKERFILE='Dockerfile'
-DEBIAN_VERSION='stretch'
-DOCKER_IMAGE_TAG="kalliope-debian"
-LOCAL_SHARED_DIRECTORY="kalliope-shared"
-CONTAINER_SHARED_HOME_DIRECTORY="/home/kalliope"
-TIMEZONE="Europe/Rome"
-CMU_SPHINX=False
+RESOURCE_LIST_GIT_URLS=[]
+DOCKERFILE=''
+DEBIAN_VERSION=''
+DOCKER_IMAGE_TAG=''
+LOCAL_SHARED_DIRECTORY=''
+CONTAINER_SHARED_HOME_DIRECTORY=''
+TIMEZONE=''
+CMU_SPHINX=''
 
 class Configuration():
 
-    pass
+    def __init__(self):
+        self.cfg_file = 'kalliope_docker.conf'
+        self.parse()
 
+    def parse(self):
+        config = configparser.ConfigParser(os.environ, interpolation = configparser.BasicInterpolation())
+        config.optionxform = str
+        try:
+            config.read(self.cfg_file)
+
+            KALLIOPE_PROFILE_GIT_URL = config.get('Profile',
+                                                  'git url',
+                                                  fallback='https://github.com/kalliope-project/kalliope_starter_en')
+
+            # See https://stackoverflow.com/a/8048529
+            # No fallback needed for the resources.
+            if 'Resources' in config:
+                resources_items = config.items('Resources')
+                for key, resource_git_url in resources_items:
+                    RESOURCE_LIST_GIT_URLS.append(resource_git_url)
+
+            TIMEZONE = config.get('Environment',
+                                  'Timezone',
+                                  fallback='America/New_York')
+
+            DOCKER_IMAGE_TAG = config.get('Docker',
+                                          'Docker image tag',
+                                          fallback='kalliope-docker')
+
+            DOCKERFILE = config.get('Docker',
+                                    'Dockerfile',
+                                    fallback='Dockerfile')
+
+            LOCAL_SHARED_DIRECTORY = config.get('Docker',
+                                                'Local shared directory',
+                                                fallback='kalliope-shared')
+
+            CONTAINER_SHARED_HOME_DIRECTORY = config.get('Docker',
+                                                         'Container shared home directory',
+                                                         fallback='/home/kalliope')
+
+            DEBIAN_VERSION = config.get('Docker',
+                                        'Debian version',
+                                        fallback='stretch')
+
+            CMU_SPHINX = config.getboolean('Docker',
+                                        'Enable CMU Sphinx',
+                                        fallback=False)
+
+            return config
+        except configparser.Error:
+            raise
 
 class Setup():
     """ Generate the Dockerfile according to the user configuration.
@@ -388,6 +442,7 @@ class Docker():
 class CliInterface():
 
     def __init__(self):
+        self.configuration = Configuration()
         self.docker = Docker(args=None)
         self.setup = Setup(args=None)
         self.parser = self.create_parser()
