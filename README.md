@@ -17,12 +17,7 @@ Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker conta
 - Network access
   - LAN, using LAN addresses directly
   - Internet
-- No proprietary dependencies (notably: no ``libttspico-utils``)
-
-## How to
-
-Once Defined the profile and resources git links, these will be already 
-configured when Kalliope starts.
+- No proprietary dependencies (notably: no `libttspico-utils`)
 
 ## Note
 
@@ -32,10 +27,18 @@ configured when Kalliope starts.
 - You should edit your profile to use espeak as the default TTS since 
   it's the only free software offline engine available for the moment.
   Installation of svox is not supported because it's proprietary software.
+- Once you have defined the profile and resources git links, these will be 
+  already configured when Kalliope starts. The purpose is to separate 
+  completely the profile from the other components such as the neurons
+  so that the user always works with a clean and more manageable profile.
+  
 
-## Steps
+## How to
 
-    <edit the variables at the top of the script>    
+1. Copy `kalliope_docker.conf.dist` to `kalliope_docker.conf`
+2. Edit it based on your needs. Variables are self explanatory.
+3. Then:
+
     $ ./kalliope_docker.py setup generate
     $ ./kalliope_docker.py image create
     $ ./kalliope_docker.py container run

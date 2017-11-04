@@ -52,7 +52,7 @@ class Configuration():
         self.parse()
 
     def parse(self):
-        config = configparser.ConfigParser(os.environ, interpolation = configparser.BasicInterpolation())
+        config = configparser.ConfigParser()
         config.optionxform = str
         try:
             config.read(self.cfg_file)
@@ -435,10 +435,12 @@ class Docker():
                 outs, errs = subprocess.Popen(stop_command).communicate()
 
 
+# Not really nice to see but it works.
 configuration = None
 class CliInterface():
 
     def __init__(self):
+        # See previous comment.
         global configuration
         configuration = Configuration()
         self.docker = Docker()
