@@ -41,7 +41,7 @@ DOCKER_IMAGE_TAG="kalliope-debian"
 LOCAL_SHARED_DIRECTORY="kalliope-shared"
 CONTAINER_SHARED_HOME_DIRECTORY="/home/kalliope"
 TIMEZONE="Europe/Rome"
-
+CMU_SPHINX=False
 
 class Configuration():
 
@@ -75,13 +75,9 @@ libffi-dev sox \
 libatlas3-base \
 mplayer \
 locales \
-libav-tools \
-swig \
-libpulse-dev'''
+libav-tools'''
         self.extra_apt_packages=None
-        self.standard_pip_packages='''
-kalliope \
-pocketsphinx'''
+        self.standard_pip_packages='''kalliope'''
         self.extra_pip_packages=None
         self.docker_image_profile_directory=None
 
@@ -141,6 +137,16 @@ pocketsphinx'''
             if self.extra_pip_packages is not None:
                 d.write("RUN pip install " + self.extra_pip_packages + "\n")
             d.write("\n")
+
+            # CMU SPHINX
+            if CMU_SPHINX:
+                pass
+                # See
+                # https://github.com/Uberi/speech_recognition/blob/master/reference/pocketsphinx.rst#installing-other-languages
+
+                #  d.write("ENV SR_LIB=$(python -c "import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))")
+                # d.write("RUN wget <language profile link, read from profile's settings.yml> ")
+                # d.write("RUN unzip -o "$SR_LIB/lang-LANG.zip" -d "$SR_LIB")
 
             # Setup initial environment.
             d.write("ENV HOME " + CONTAINER_SHARED_HOME_DIRECTORY + "\n")
@@ -250,6 +256,10 @@ pocketsphinx'''
             self.extra_apt_packages = ' '.join(package_dependencies['apt_dependencies'])
         if package_dependencies['pip_dependencies'] != list():
             self.extra_pip_packages = ' '.join(package_dependencies['pip_dependencies'])
+        if CMU_SPHINX:
+            # Leave an extra space so sub-strings are not stuck together.
+            self.extra_apt_packages += " swig libpulse-dev unzip"
+            self.extra_pip_packages += " pocketsphinx"
 
     #
     # The following are the only accessible methods by the user.
@@ -386,9 +396,11 @@ class CliInterface():
         fgp.required = True
 
         image_create_prs = igp.add_parser('create', help='create a new image')
+        image_build_prs = igp.add_parser('build', help='alias for the option create')
         image_delete_prs = igp.add_parser('delete', help='delete the existing images')
 
         container_run_prs = cgp.add_parser('run', help='run Kalliope')
+        container_start_prs = cgp.add_parser('start', help='alias for the option run')
         container_shell_prs = cgp.add_parser('shell', help='open an interactive shell')
         container_stop_prs = cgp.add_parser('stop', help='exit and remove the running containers')
 
@@ -396,9 +408,11 @@ class CliInterface():
         setup_delete_prs = fgp.add_parser('delete', help='delete the dockerfile, starter kit and resources')
 
         image_create_prs.set_defaults(func=self.docker.image_create)
+        image_build_prs.set_defaults(func=self.docker.image_create)
         image_delete_prs.set_defaults(func=self.docker.image_delete)
 
         container_run_prs.set_defaults(func=self.docker.container_run)
+        container_start_prs.set_defaults(func=self.docker.container_run)
         container_shell_prs.set_defaults(func=self.docker.container_shell)
         container_stop_prs.set_defaults(func=self.docker.container_stop)
 
