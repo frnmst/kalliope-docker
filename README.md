@@ -4,6 +4,22 @@ Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker conta
 
 [![asciicast](https://asciinema.org/a/145756.png)](https://asciinema.org/a/145756)
 
+# Table of contents
+
+[](TOC)
+
+- [Kalliope Docker Debian](#kalliope-docker-debian)
+- [Table of contents](#table-of-contents)
+    - [Reasons](#reasons)
+    - [Features](#features)
+        - [Notes](#notes)
+    - [How to](#how-to)
+        - [Dependencies](#dependencies)
+    - [TODO](#todo)
+    - [Copyright and License](#copyright-and-license)
+
+[](TOC)
+
 ## Reasons
 
 - Debian-based distros are not your daily GNU/Linux distributions.
@@ -19,7 +35,7 @@ Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker conta
   - Internet
 - No proprietary dependencies (notably: no `libttspico-utils`)
 
-## Note
+### Notes
 
 - Containers for this image are run in ephemeral mode. this means that 
   one the container is stopped, it is automatically deleted. This is 
@@ -45,7 +61,7 @@ Run [Kalliope](https://kalliope-project.github.io/) inside a Debian Docker conta
 
 If no errors are reported, Kalliope should be ready for orders.
 
-## Dependencies
+### Dependencies
 
 - Docker (system)
 - Git (system)
