@@ -4,8 +4,9 @@
 !kalliope_docker.py
 !README.md
 !LICENSE.txt
-!kalliope_docker_asciinema.json
+!asciinema
 !kalliope_docker.conf.dist
+!kalliope_docker
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
