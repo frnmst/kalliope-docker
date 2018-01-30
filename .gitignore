@@ -1,13 +1,3 @@
-# Ignore everything except the repository related stuff.
-*
-
-!kalliope_docker.py
-!README.md
-!LICENSE.txt
-!asciinema
-!kalliope_docker.conf.dist
-!kalliope_docker
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
