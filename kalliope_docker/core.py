@@ -19,28 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-STANDARD_APT_PACKAGES=[
-'curl',
-'git',
-'python-dev',
-'libsmpeg0',
-'flac',
-'dialog',
-'libffi-dev',
-'libssl-dev',
-'portaudio19-dev',
-'build-essential',
-'libssl-dev',
-'libffi-dev',
-'sox',
-'libatlas3-base',
-'mplayer',
-'locales',
-'libav-tools']
-STANDARD_PIP_PACKAGES=[
-'kalliope']
-
+"""The core interface."""
 
 def generate_dockerfile(standard_apt_packages,
                         extra_apt_packages,
