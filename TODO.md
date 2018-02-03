@@ -22,7 +22,7 @@ supported.
 
 ## ALSA
 
-0- Share devices:
+- Share devices:
 
     /dev/snd
 
