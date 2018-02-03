@@ -72,8 +72,8 @@ def generate_dockerfile(standard_apt_packages,
     # Setup initial environment.
     dockerfile += "ENV HOME " + container_shared_home_directory + "\n"
     dockerfile += "RUN groupadd -g 1001 kalliope\n"
-    dockerfile += "RUN useradd -u 1000 -g 1001 --create-home --home-dir $HOME kalliope\n"
-    dockerfile += "RUN chown -R kalliope:kalliope $HOME/" + docker_image_profile_directory + "\n\n"
+    dockerfile += "RUN useradd -u 1000 -g 1001 --create-home kalliope\n"
+    dockerfile += "RUN chown -R kalliope:kalliope $HOME\n\n"
 
     # Execute the Kalliope command.
     dockerfile += "WORKDIR $HOME/" + docker_image_profile_directory + "\n"
