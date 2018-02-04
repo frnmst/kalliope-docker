@@ -97,5 +97,10 @@ def execute_shell_command(command, interactive=False):
         subprocess.Popen(command)
 
 
+def get_git_repository_name_from_url(url):
+    """Get the repository name from a url that ends with .git."""
+    assert isinstance(url,str)
+    return url.split('/')[-1].replace('.git','')
+
 if __name__ == '__main__':
     pass
