@@ -23,33 +23,33 @@
 default: pep doc test
 
 githook:
-    git config core.hooksPath .githooks
+	git config core.hooksPath .githooks
 
 pep:
-    yapf --style '{based_on_style: pep8; split_before_logical_operator: False}' -i kalliope_docker/*.py tests/*.py
-    flake8 --ignore=F401,E501 kalliope_docker/*.py tests/*.py
+	yapf --style '{based_on_style: pep8; split_before_logical_operator: False}' -i kalliope_docker/*.py tests/*.py
+	flake8 --ignore=F401,E501 kalliope_docker/*.py tests/*.py
 
 doc:
-    $(MAKE) -C docs html
+	$(MAKE) -C docs html
 
 install:
-    pip install .
+	pip install .
 
 test:
-    python setup.py test
+	python setup.py test
 
 uninstall:
-    pip uninstall kalliope_docker
+	pip uninstall kalliope_docker
 
 dist:
-    python setup.py sdist
-    python setup.py bdist_wheel
+	python setup.py sdist
+	python setup.py bdist_wheel
 
 upload:
-    twine upload dist/*
+	twine upload dist/*
 
 clean:
-    rm -rf build dist *.egg-info
+	rm -rf build dist *.egg-info
 
 .PHONY: default pep doc install test uninstall dist upload clean
 

@@ -29,3 +29,13 @@ supported.
 - Permissions:
 
     TODO
+
+# Network
+
+Enable LAN access. This is useful for example for the WOL neuron.
+
+# Shell commands and Python
+
+All commands involving the filesystem (copy, remove , rename files), git, 
+docker, will be called with the `subprocess` module. The rest, such as string 
+parsing, will be handled directly by Python.

@@ -21,14 +21,13 @@
 # SOFTWARE.
 """The core interface."""
 
-def generate_dockerfile(standard_apt_packages,
-                        extra_apt_packages,
-                        standard_pip_packages,
-                        extra_pip_packages,
-                        debian_version,
-                        timezone,
-                        container_shared_home_directory,
-                        docker_image_profile_directory):
+import subprocess
+import shlex
+
+def generate_dockerfile(
+        standard_apt_packages, extra_apt_packages, standard_pip_packages,
+        extra_pip_packages, debian_version, timezone,
+        container_shared_home_directory, docker_image_profile_directory):
     """Get a string corresponding to the final dockerfile."""
     assert isinstance(standard_apt_packages, list)
     assert isinstance(extra_apt_packages, list)
@@ -82,5 +81,21 @@ def generate_dockerfile(standard_apt_packages,
 
     return dockerfile
 
+
+def build_shell_command(command):
+    """Return a space tokenized list from a shell command string."""
+    assert isinstance(command, str)
+    return shlex.split(command)
+
+
+def execute_shell_command(command, interactive=False):
+    """Execute a shell command either interactively or in the background."""
+    assert isinstance(command, list)
+    if interactive:
+        outs, errs = subprocess.Popen(command).communicate()
+    else:
+        subprocess.Popen(command)
+
+
 if __name__ == '__main__':
-    main()
+    pass
