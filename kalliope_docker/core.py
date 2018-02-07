@@ -23,6 +23,7 @@
 
 import subprocess
 import shlex
+import yaml
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -91,6 +92,7 @@ def build_shell_command(command):
 def execute_shell_command(command, interactive=False):
     """Execute a shell command either interactively or in the background."""
     assert isinstance(command, list)
+    assert isinstance(interactive, bool)
     if interactive:
         outs, errs = subprocess.Popen(command).communicate()
     else:
@@ -101,6 +103,76 @@ def get_git_repository_name_from_url(url):
     """Get the repository name from a url that ends with .git."""
     assert isinstance(url,str)
     return url.split('/')[-1].replace('.git','')
+
+
+def load_yaml_file(filename):
+    """Return a data structure containing the loaded yaml file."""
+    assert isinstance(filename, str)
+    with open(filename, 'r') as f:
+        return yaml.load(f)
+
+
+def profile_pipeline(kalliope_profile_git_url, resources_git_url):
+    """Act on the profile and resources.
+
+    Download and placing the stuff in the right places.
+
+    Return a data structure containing the extra apt and pip packages.
+    Resources are neurons....
+    :returns: a dict that will be passed to the docker file generator.
+    """
+    assert isinstance(kalliope_profile_git_url, str)
+    assert isinstance(resources_git_url, list)
+
+    extra_packages = dict()
+    extra_packages['apt'] = list()
+    extra_packages['pip'] = list()
+
+    command = 'git clone' + ' ' + kalliope_profile_git_url
+    execute_shell_command(build_shell_command(command),interactive=True)
+    kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
+    settings = load_yaml_file(kalliope_profile_relative_path + '/settings.yml')
+
+    for resource_url in resources_git_url:
+        command = 'git clone' + ' ' + resource_url
+        execute_shell_command(build_shell_command(command),interactive=True)
+
+        resource_relative_path = get_git_repository_name_from_url(resource_url)
+
+        for task in load_yaml_file(resource_relative_path + '/install.yml')[0]['tasks']:
+            if 'apt' in task:
+                extra_packages['apt'].append(task['apt']['name'])
+            if 'pip' in task:
+                extra_packages['pip'].append(task['pip']['name'])
+
+        # Parse information to build a relative path to place the resource.
+        dna = load_yaml_file(resource_relative_path + '/dna.yml')
+        resource_type = dna['type']
+        resource_name = dna['name']
+        resource_relative_dest_path = settings['resource_directory'][resource_type]
+
+        # Copy the resource directory in the profile directory (only if
+        # necessary: see the -u option.
+        resource_parent_directory_relative_path = kalliope_profile_relative_path + '/' + resource_relative_dest_path
+        command = 'cp -aRu' + ' ' + resource_relative_path + ' ' + resource_parent_directory_relative_path
+        execute_shell_command(build_shell_command(command))
+
+    return extra_packages
+
+
+def load_standard_packages(apt_filename, pip_filename):
+    """Load the standard package list from text files."""
+    assert isinstance(apt_filename, str)
+    assert isinstance(pip_filename, str)
+    apt_packages = list()
+    pip_packages = list()
+    with open(apt_filename, 'r') as a:
+        for line in a:
+            apt_packages.append(line)
+    with open(pip_filename, 'r') as p:
+        for line in p:
+            pip_packages.append(line)
+
 
 if __name__ == '__main__':
     pass
