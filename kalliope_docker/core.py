@@ -144,7 +144,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     for resource_url in resources_git_url:
         resource_relative_path = get_git_repository_name_from_url(resource_url)
         resource_full_path = full_base_path + '/' + resource_relative_path
-        command = 'git clone' + ' ' + resource_url + ' ' + resource_full_path
+        command = 'git clone --depth 1' + ' ' + resource_url + ' ' + resource_full_path
         execute_shell_command(build_shell_command(command),interactive=True)
 
         for task in load_yaml_file(resource_full_path + '/install.yml')[0]['tasks']:
@@ -159,8 +159,8 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
         resource_name = dna['name']
         resource_relative_dest_path = settings['resource_directory'][resource_type]
 
-        # Copy the resource directory in the profile directory (only if
-        # necessary: see the -u option.
+        # Copy the resource directory in the profile directory only if
+        # necessary: -u option.
         resource_parent_directory_full_path = kalliope_profile_full_path + '/' + resource_relative_dest_path
         command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
         execute_shell_command(build_shell_command(command))
