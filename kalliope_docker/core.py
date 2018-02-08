@@ -112,15 +112,21 @@ def load_yaml_file(filename):
         return yaml.load(f)
 
 
-def profile_pipeline(kalliope_profile_git_url, resources_git_url):
+def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url):
     """Act on the profile and resources.
 
+    :param full_base_path: the base directory where all the cache repositories
+        are kept. Every file operatin is done within this directory. This
+        should be a hidden directory in the user's home.
+    :param
+    :param
     Download and placing the stuff in the right places.
 
     Return a data structure containing the extra apt and pip packages.
     Resources are neurons....
     :returns: a dict that will be passed to the docker file generator.
     """
+    assert isinstance(full_base_path, str)
     assert isinstance(kalliope_profile_git_url, str)
     assert isinstance(resources_git_url, list)
 
@@ -128,33 +134,35 @@ def profile_pipeline(kalliope_profile_git_url, resources_git_url):
     extra_packages['apt'] = list()
     extra_packages['pip'] = list()
 
-    command = 'git clone' + ' ' + kalliope_profile_git_url
-    execute_shell_command(build_shell_command(command),interactive=True)
     kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
-    settings = load_yaml_file(kalliope_profile_relative_path + '/settings.yml')
+    kalliope_profile_full_path = full_base_path + '/' + kalliope_profile_relative_path
+    # Clone the last commit only.
+    command = 'git clone --depth 1' + ' ' + kalliope_profile_git_url + ' ' + kalliope_profile_full_path
+    execute_shell_command(build_shell_command(command),interactive=True)
+    settings = load_yaml_file(kalliope_profile_full_path + '/settings.yml')
 
     for resource_url in resources_git_url:
-        command = 'git clone' + ' ' + resource_url
+        resource_relative_path = get_git_repository_name_from_url(resource_url)
+        resource_full_path = full_base_path + '/' + resource_relative_path
+        command = 'git clone' + ' ' + resource_url + ' ' + resource_full_path
         execute_shell_command(build_shell_command(command),interactive=True)
 
-        resource_relative_path = get_git_repository_name_from_url(resource_url)
-
-        for task in load_yaml_file(resource_relative_path + '/install.yml')[0]['tasks']:
+        for task in load_yaml_file(resource_full_path + '/install.yml')[0]['tasks']:
             if 'apt' in task:
                 extra_packages['apt'].append(task['apt']['name'])
             if 'pip' in task:
                 extra_packages['pip'].append(task['pip']['name'])
 
         # Parse information to build a relative path to place the resource.
-        dna = load_yaml_file(resource_relative_path + '/dna.yml')
+        dna = load_yaml_file(resource_full_path + '/dna.yml')
         resource_type = dna['type']
         resource_name = dna['name']
         resource_relative_dest_path = settings['resource_directory'][resource_type]
 
         # Copy the resource directory in the profile directory (only if
         # necessary: see the -u option.
-        resource_parent_directory_relative_path = kalliope_profile_relative_path + '/' + resource_relative_dest_path
-        command = 'cp -aRu' + ' ' + resource_relative_path + ' ' + resource_parent_directory_relative_path
+        resource_parent_directory_full_path = kalliope_profile_full_path + '/' + resource_relative_dest_path
+        command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
         execute_shell_command(build_shell_command(command))
 
     return extra_packages
