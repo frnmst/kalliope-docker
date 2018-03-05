@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""The core interface."""
+"""The main functions."""
 
 import subprocess
 import shlex
@@ -118,13 +118,13 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     :param full_base_path: the base directory where all the cache repositories
         are kept. Every file operatin is done within this directory. This
         should be a hidden directory in the user's home.
-    :param
-    :param
-    Download and placing the stuff in the right places.
+    :param kalliope_profile_git_url:
+    :param resources_git_url:
 
-    Return a data structure containing the extra apt and pip packages.
-    Resources are neurons....
     :returns: a dict that will be passed to the docker file generator.
+
+    Build a complete Kalliope profile with all necessary packages and return a
+    data structure containing the extra apt and pip packages.
     """
     assert isinstance(full_base_path, str)
     assert isinstance(kalliope_profile_git_url, str)
@@ -160,7 +160,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
         resource_relative_dest_path = settings['resource_directory'][resource_type]
 
         # Copy the resource directory in the profile directory only if
-        # necessary: -u option.
+        # necessary thanks to the 'u' option.
         resource_parent_directory_full_path = kalliope_profile_full_path + '/' + resource_relative_dest_path
         command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
         execute_shell_command(build_shell_command(command))
@@ -168,7 +168,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     return extra_packages
 
 
-def load_standard_packages(apt_filename, pip_filename):
+def load_standard_packages_from_files(apt_filename, pip_filename):
     """Load the standard package list from text files."""
     assert isinstance(apt_filename, str)
     assert isinstance(pip_filename, str)
@@ -180,6 +180,8 @@ def load_standard_packages(apt_filename, pip_filename):
     with open(pip_filename, 'r') as p:
         for line in p:
             pip_packages.append(line)
+
+    return apt_packages, pip_packages
 
 
 if __name__ == '__main__':
