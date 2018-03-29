@@ -100,7 +100,7 @@ def execute_shell_command(command, interactive=False):
 
 
 def get_git_repository_name_from_url(url):
-    """Get the repository name from a url that ends with .git."""
+    """Get the repository name from an URL that ends with .git."""
     assert isinstance(url,str)
     return url.split('/')[-1].replace('.git','')
 
@@ -168,16 +168,16 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     return extra_packages
 
 
-def load_standard_packages_from_files(apt_filename, pip_filename):
+def load_standard_packages_from_files(apt_requirements_filename, pip_requirements_filename):
     """Load the standard package list from text files."""
-    assert isinstance(apt_filename, str)
-    assert isinstance(pip_filename, str)
+    assert isinstance(apt_requirements_filename, str)
+    assert isinstance(pip_requirements_filename, str)
     apt_packages = list()
     pip_packages = list()
-    with open(apt_filename, 'r') as a:
+    with open(apt_requirements_filename, 'r') as a:
         for line in a:
             apt_packages.append(line)
-    with open(pip_filename, 'r') as p:
+    with open(pip_requirements_filename, 'r') as p:
         for line in p:
             pip_packages.append(line)
 

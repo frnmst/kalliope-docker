@@ -21,3 +21,66 @@
 # SOFTWARE.
 """The CLI interface."""
 
+import argparse
+import textwrap
+from .core import (profile_pipeline)
+
+PROGRAM_DESCRIPTION='Kalliope Docker: run and setup Kalliope inside a Docker container.'
+PROGRAM_EPILOG=''
+
+class CliToApi():
+    """An interface between the CLI and API functions."""
+
+    def setup_download(self, args):
+
+        print(args)
+        #profile_pipeline()
+
+class CliInterface():
+    """The interface exposed to the final user."""
+
+    def __init__(self):
+        """..."""
+        self.parser = self.create_parser()
+
+    def create_parser(self):
+        """Create the CLI parser."""
+        parser = argparse.ArgumentParser(
+            description=PROGRAM_DESCRIPTION,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=textwrap.dedent(PROGRAM_EPILOG))
+
+        parser.add_argument(
+            # Set default value.
+            '-c',
+            '--configuration-file',
+            help='the path of the configuration file'
+        )
+
+        subparsers = parser.add_subparsers(
+            dest='parser', title='command')
+        subparsers.required = True
+
+        setup = subparsers.add_parser(
+            'setup',
+            description='Download all dependencies and create a docker image.'
+        )
+        sgp = setup.add_subparsers(dest='command')
+        sgp.required = True
+        setup_download = sgp.add_parser('download', help='download the profile and all the dependencies')
+        setup_download.set_defaults(func=CliToApi().setup_download)
+        # build image (build)
+        # clear all deps
+        # remove image
+
+
+        container = subparsers.add_parser(
+            'container',
+            description='Interact with the container.'
+        )
+        # run (alias start)
+        # stop
+        # shell
+        # remove (in case auto-remove does not work).
+
+        return parser
