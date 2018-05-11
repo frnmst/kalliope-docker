@@ -113,10 +113,10 @@ def load_yaml_file(filename):
         return yaml.load(f)
 
 
-def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url):
+def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resources_git_url):
     """Act on the profile and resources.
 
-    :param full_base_path: the base directory where all the cache repositories
+    :param base_directory_full_path: the base directory where all the cache repositories
         are kept. Every file operation is done within this directory. This
         should be a hidden directory in the user's home.
     :param kalliope_profile_git_url:
@@ -127,7 +127,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     Build a complete Kalliope profile with all necessary packages and return a
     data structure containing the extra apt and pip packages.
     """
-    assert isinstance(full_base_path, str)
+    assert isinstance(base_directory_full_path, str)
     assert isinstance(kalliope_profile_git_url, str)
     assert isinstance(resources_git_url, list)
 
@@ -136,7 +136,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     extra_packages['pip'] = list()
 
     kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
-    kalliope_profile_full_path = full_base_path + '/' + kalliope_profile_relative_path
+    kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
     # Clone the last commit only.
     command = 'git clone --depth 1' + ' ' + kalliope_profile_git_url + ' ' + kalliope_profile_full_path
     execute_shell_command(build_shell_command(command),interactive=True)
@@ -144,7 +144,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
 
     for resource_url in resources_git_url:
         resource_relative_path = get_git_repository_name_from_url(resource_url)
-        resource_full_path = full_base_path + '/' + resource_relative_path
+        resource_full_path = base_directory_full_path + '/' + resource_relative_path
         command = 'git clone --depth 1' + ' ' + resource_url + ' ' + resource_full_path
         execute_shell_command(build_shell_command(command),interactive=True)
 
@@ -194,6 +194,7 @@ def load_configuration_file(configuration_filename):
 
     # Set fallbacks in case configuration (file is missing???) or variable not
     # set.
+    base_directory_full_path_fallback=''
     kalliope_profile_git_url_fallback='https://github.com/kalliope-project/kalliope_starter_en'
     timezone_fallback='America/New_York'
     docker_image_tag_fallback='kalliope-docker'
@@ -204,14 +205,17 @@ def load_configuration_file(configuration_filename):
     enable_cmu_sphinx_fallback = False
 
     configuration = dict()
+    configuration['base_directory_full_path'] = config.get('Profile',
+                                                           'base directory full path',
+                                                           fallback=base_directory_full_path_fallback)
     configuration['kalliope_profile_git_url'] = config.get('Profile',
                                                            'git url',
                                                            fallback=kalliope_profile_git_url_fallback)
     if 'Resources' in config:
-        configuration['resources'] = list()
+        configuration['resources_git_url'] = list()
         resources_items = config.items('Resources')
         for key, resource_git_url in resources_items:
-            configuration['resources'].append(resource_git_url)
+            configuration['resources_git_url'].append(resource_git_url)
     configuration['timezone'] = config.get('Environment',
                                            'Timezone',
                                            fallback=timezone_fallback)

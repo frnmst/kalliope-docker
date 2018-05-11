@@ -1,9 +1,13 @@
 # An example configuration file.
 
 [Profile]
+# Directory where all the cache will lie.
+base directory full path = .
+
+# Kalliope's profile.
 git url = https://github.com/kalliope-project/kalliope_starter_en.git
 
-# Put your neurons, stt or tts 
+# Put your neurons, stt or tts.
 [Resources]
 r1 git url = https://github.com/Ultchad/kalliope-espeak.git 
 r2 git url = https://github.com/kalliope-project/kalliope_neuron_wikipedia.git
@@ -16,7 +20,7 @@ Timezone = America/New_York
 Docker image tag = kalliope-docker
 Dockerfile = Dockerfile
 Local shared directory = kalliope-shared
-# The name of the home directory that is used inside the container
+# The name of the home directory that is used inside the container.
 Container shared home directory = /home/kalliope
 Debian version = stretch
 Enable CMU Sphinx = no

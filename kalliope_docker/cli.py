@@ -36,7 +36,13 @@ class CliToApi():
         print(args)
         kalliope_docker_configuration = load_configuration_file('kalliope_docker.conf.dist')
         print(kalliope_docker_configuration)
-        #profile_pipeline(kalliope_profile_git_url=configuration['kalliope_profile_git_url'])
+        """
+         #profile_pipeline(
+            base_directory_full_path=configuration['base_directory_full_path'],
+            kalliope_profile_git_url=configuration['kalliope_profile_git_url'],
+            resources_git_url=configuration['resources_git_url']
+         )
+        """
 
 class CliInterface():
     """The interface exposed to the final user."""
