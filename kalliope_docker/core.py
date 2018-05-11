@@ -24,6 +24,7 @@
 import subprocess
 import shlex
 import yaml
+import configparser
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -116,7 +117,7 @@ def profile_pipeline(full_base_path, kalliope_profile_git_url, resources_git_url
     """Act on the profile and resources.
 
     :param full_base_path: the base directory where all the cache repositories
-        are kept. Every file operatin is done within this directory. This
+        are kept. Every file operation is done within this directory. This
         should be a hidden directory in the user's home.
     :param kalliope_profile_git_url:
     :param resources_git_url:
@@ -172,6 +173,7 @@ def load_standard_packages_from_files(apt_requirements_filename, pip_requirement
     """Load the standard package list from text files."""
     assert isinstance(apt_requirements_filename, str)
     assert isinstance(pip_requirements_filename, str)
+
     apt_packages = list()
     pip_packages = list()
     with open(apt_requirements_filename, 'r') as a:
@@ -183,6 +185,56 @@ def load_standard_packages_from_files(apt_requirements_filename, pip_requirement
 
     return apt_packages, pip_packages
 
+def load_configuration_file(configuration_filename):
+    """Load the configuration file for kalliope_docker."""
+    assert isinstance(configuration_filename, str)
+
+    config = configparser.ConfigParser()
+    config.read(configuration_filename)
+
+    # Set fallbacks in case configuration (file is missing???) or variable not
+    # set.
+    kalliope_profile_git_url_fallback='https://github.com/kalliope-project/kalliope_starter_en'
+    timezone_fallback='America/New_York'
+    docker_image_tag_fallback='kalliope-docker'
+    dockerfile_fallback='Dockerfile'
+    local_shared_directory_fallback='kalliope-shared'
+    container_shared_home_directory_fallback='/home/kalliope'
+    debian_version_fallback = 'stretch'
+    enable_cmu_sphinx_fallback = False
+
+    configuration = dict()
+    configuration['kalliope_profile_git_url'] = config.get('Profile',
+                                                           'git url',
+                                                           fallback=kalliope_profile_git_url_fallback)
+    if 'Resources' in config:
+        configuration['resources'] = list()
+        resources_items = config.items('Resources')
+        for key, resource_git_url in resources_items:
+            configuration['resources'].append(resource_git_url)
+    configuration['timezone'] = config.get('Environment',
+                                           'Timezone',
+                                           fallback=timezone_fallback)
+    configuration['docker_image_tag'] = config.get('Docker',
+                                                   'Docker image tag',
+                                                   fallback=docker_image_tag_fallback)
+    configuration['dockerfile'] = config.get('Docker',
+                                          'Dockerfile',
+                                          fallback=dockerfile_fallback)
+    configuration['local_shared_directory'] = config.get('Docker',
+                                                'Local shared directory',
+                                                fallback=local_shared_directory_fallback)
+    configuration['container_shared_home_directory'] = config.get('Docker',
+                                                      'Container shared home directory',
+                                                      fallback=container_shared_home_directory_fallback)
+    configuration['debian_version'] = config.get('Docker',
+                                        'Debian version',
+                                        fallback=debian_version_fallback)
+    configuration['enable_cmu_sphinx'] = config.getboolean('Docker',
+                                        'Enable CMU Sphinx',
+                                        fallback=enable_cmu_sphinx_fallback)
+
+    return configuration
 
 if __name__ == '__main__':
     pass

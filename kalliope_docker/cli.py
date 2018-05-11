@@ -23,7 +23,7 @@
 
 import argparse
 import textwrap
-from .core import (profile_pipeline)
+from .core import (profile_pipeline, load_configuration_file)
 
 PROGRAM_DESCRIPTION='Kalliope Docker: run and setup Kalliope inside a Docker container.'
 PROGRAM_EPILOG=''
@@ -34,7 +34,9 @@ class CliToApi():
     def setup_download(self, args):
 
         print(args)
-        #profile_pipeline()
+        kalliope_docker_configuration = load_configuration_file('kalliope_docker.conf.dist')
+        print(kalliope_docker_configuration)
+        #profile_pipeline(kalliope_profile_git_url=configuration['kalliope_profile_git_url'])
 
 class CliInterface():
     """The interface exposed to the final user."""
