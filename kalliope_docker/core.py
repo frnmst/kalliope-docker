@@ -30,7 +30,7 @@ from pathlib import Path
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
         extra_pip_packages, debian_version, timezone,
-        container_shared_home_directory, docker_image_profile_directory):
+        container_shared_home_directory, docker_image_files_directory):
     """Get a string corresponding to the final dockerfile."""
     assert isinstance(standard_apt_packages, list)
     assert isinstance(extra_apt_packages, list)
@@ -39,7 +39,7 @@ def generate_dockerfile(
     assert isinstance(debian_version, str)
     assert isinstance(timezone, str)
     assert isinstance(container_shared_home_directory, str)
-    assert isinstance(docker_image_profile_directory, str)
+    assert isinstance(docker_image_files_directory, str)
     assert len(standard_apt_packages) > 0
     assert len(standard_pip_packages) > 0
 
@@ -78,7 +78,7 @@ def generate_dockerfile(
     dockerfile += "RUN chown -R kalliope:kalliope $HOME\n\n"
 
     # Execute the Kalliope command.
-    dockerfile += "WORKDIR $HOME/" + docker_image_profile_directory + "\n"
+    dockerfile += "WORKDIR $HOME/" + docker_image_files_directory + "\n"
     dockerfile += "USER kalliope\n"
     dockerfile += "CMD /bin/bash -c 'kalliope start'\n"
 
@@ -123,7 +123,8 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
     :param kalliope_profile_git_url:
     :param resources_git_url:
 
-    :returns: a dict that will be passed to the docker file generator.
+    :returns: a dictionary that will be passed to the docker file generator.
+    :rtype: dict
 
     Build a complete Kalliope profile with all necessary packages and return a
     data structure containing the extra apt and pip packages.
@@ -171,20 +172,25 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
 
 
 def load_standard_packages_from_files(apt_requirements_filename, pip_requirements_filename):
-    """Load the standard package list from text files."""
+    """Populate the standard package lists from text files.
+
+    :returns: two lists.
+    :rtype: dict
+    """
     assert isinstance(apt_requirements_filename, str)
     assert isinstance(pip_requirements_filename, str)
 
-    apt_packages = list()
-    pip_packages = list()
+    standard_packages['apt'] = list()
+    standard_packages['pip'] = list()
     with open(apt_requirements_filename, 'r') as a:
         for line in a:
-            apt_packages.append(line)
+            standard_packages['apt'].append(line)
     with open(pip_requirements_filename, 'r') as p:
         for line in p:
-            pip_packages.append(line)
+            standard_packages['pip'].append(line)
 
-    return apt_packages, pip_packages
+    return standard_packages
+
 
 def load_configuration_file(configuration_filename):
     """Load the configuration file for kalliope_docker."""
@@ -201,7 +207,7 @@ def load_configuration_file(configuration_filename):
     timezone_fallback='America/New_York'
     docker_image_tag_fallback='kalliope-docker'
     dockerfile_fallback='Dockerfile'
-    local_shared_directory_fallback='kalliope-shared'
+    docker_image_files_directory_fallback='kalliope-shared'
     container_shared_home_directory_fallback='/home/kalliope'
     debian_version_fallback = 'stretch'
     enable_cmu_sphinx_fallback = False
@@ -211,7 +217,7 @@ def load_configuration_file(configuration_filename):
                                                            'base directory full path',
                                                            fallback=base_directory_full_path_fallback)
     configuration['kalliope_profile_git_url'] = config.get('Profile',
-                                                           'git url',
+                                                           'Git url',
                                                            fallback=kalliope_profile_git_url_fallback)
     if 'Resources' in config:
         configuration['resources_git_url'] = list()
@@ -227,9 +233,9 @@ def load_configuration_file(configuration_filename):
     configuration['dockerfile'] = config.get('Docker',
                                           'Dockerfile',
                                           fallback=dockerfile_fallback)
-    configuration['local_shared_directory'] = config.get('Docker',
-                                                'Local shared directory',
-                                                fallback=local_shared_directory_fallback)
+    configuration['docker_image_files_directory'] = config.get('Docker',
+                                                'Image Files directory',
+                                                fallback=docker_image_files_directory_fallback)
     configuration['container_shared_home_directory'] = config.get('Docker',
                                                       'Container shared home directory',
                                                       fallback=container_shared_home_directory_fallback)

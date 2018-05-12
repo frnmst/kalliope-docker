@@ -3,10 +3,10 @@
 [Profile]
 # Directory where all the cache will lie. Defaults to ~/.cache/kalliope-docker
 # with ~ being expanded to /home/<user>.
-# base directory full path = /home/user/.cache/kalliope-docker
+# Base directory full path = /home/user/.cache/kalliope-docker
 
 # Kalliope's profile.
-git url = https://github.com/kalliope-project/kalliope_starter_en.git
+Git url = https://github.com/kalliope-project/kalliope_starter_en.git
 
 [Resources]
 # Put your neurons, stt or tts.
@@ -20,7 +20,10 @@ Timezone = America/New_York
 [Docker]
 Docker image tag = kalliope-docker
 Dockerfile = Dockerfile
-Local shared directory = kalliope-shared
+
+# This is the directory containing the files used by the docker image.
+# Its path is under the "Base directory full path".
+Docker image files directory = kalliope-shared
 
 # The name of the home directory that is used inside the container.
 Container shared home directory = /home/kalliope

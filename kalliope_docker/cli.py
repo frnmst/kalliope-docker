@@ -37,11 +37,22 @@ class CliToApi():
         kalliope_docker_configuration = load_configuration_file('kalliope_docker.conf.dist')
         print(kalliope_docker_configuration)
         """
-         #profile_pipeline(
+        extra_packages = profile_pipeline(
             base_directory_full_path=configuration['base_directory_full_path'],
             kalliope_profile_git_url=configuration['kalliope_profile_git_url'],
             resources_git_url=configuration['resources_git_url']
-         )
+        )
+
+        standard_packages = load_standard_packages_from_files(apt_requirements_filename,
+                                                              pip_requirements_filename)
+
+        generate_dockerfile(
+        standard_packages['apt'], extra_packages['apt'],
+        standard_packages['pip'], extra_packages['pip'],
+        kalliope_docker_configuration['debian_version'],
+        kalliope_docker_configuration['timezone'],
+        kalliope_docker_configuration['container_shared_home_directory'],
+        kalliope_docker_configuration['docker_image_files_directory'])
         """
 
 class CliInterface():
