@@ -40,7 +40,8 @@ If no errors are reported, Kalliope should be ready for orders.
 Copyright and License
 ---------------------
 
-Copyright (c) 2017, Franco Masotti <franco.masotti@student.unife.it>
+Copyright (C) 2017-2018 frnmst (Franco Masotti) <franco.masotti@live.com>
+<franco.masotti@student.unife.it>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
