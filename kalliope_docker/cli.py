@@ -23,7 +23,10 @@
 
 import argparse
 import textwrap
-from .core import (profile_pipeline, load_configuration_file)
+from .core import (profile_pipeline, load_configuration_file,
+                   load_standard_packages_from_files,
+                   install_profile, generate_dockerfile,
+                   write_dockerfile)
 
 PROGRAM_DESCRIPTION='Kalliope Docker: run and setup Kalliope inside a Docker container.'
 PROGRAM_EPILOG=''
@@ -32,28 +35,36 @@ class CliToApi():
     """An interface between the CLI and API functions."""
 
     def setup_download(self, args):
-
-        print(args)
         kalliope_docker_configuration = load_configuration_file('kalliope_docker.conf.dist')
-        print(kalliope_docker_configuration)
-        """
+
         extra_packages = profile_pipeline(
-            base_directory_full_path=configuration['base_directory_full_path'],
-            kalliope_profile_git_url=configuration['kalliope_profile_git_url'],
-            resources_git_url=configuration['resources_git_url']
+            base_directory_full_path=kalliope_docker_configuration['base_directory_full_path'],
+            kalliope_profile_git_url=kalliope_docker_configuration['kalliope_profile_git_url'],
+            resources_git_url=kalliope_docker_configuration['resources_git_url']
         )
 
+        # FIXME
+        apt_requirements_filename = 'kalliope_docker/requirements/standard_apt_packages.txt'
+        pip_requirements_filename = 'kalliope_docker/requirements/standard_pip_packages.txt'
         standard_packages = load_standard_packages_from_files(apt_requirements_filename,
                                                               pip_requirements_filename)
 
-        generate_dockerfile(
+        dockerfile_string = generate_dockerfile(
         standard_packages['apt'], extra_packages['apt'],
         standard_packages['pip'], extra_packages['pip'],
         kalliope_docker_configuration['debian_version'],
         kalliope_docker_configuration['timezone'],
         kalliope_docker_configuration['container_shared_home_directory'],
         kalliope_docker_configuration['docker_image_files_directory'])
-        """
+
+        write_dockerfile(kalliope_docker_configuration['base_directory_full_path'],
+                         kalliope_docker_configuration['dockerfile'],
+                         dockerfile_string)
+
+        install_profile(kalliope_docker_configuration['base_directory_full_path'],
+                        kalliope_docker_configuration['kalliope_profile_git_url'],
+                        kalliope_docker_configuration['docker_image_files_directory'])
+
 
 class CliInterface():
     """The interface exposed to the final user."""

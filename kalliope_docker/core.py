@@ -180,6 +180,7 @@ def load_standard_packages_from_files(apt_requirements_filename, pip_requirement
     assert isinstance(apt_requirements_filename, str)
     assert isinstance(pip_requirements_filename, str)
 
+    standard_packages = dict()
     standard_packages['apt'] = list()
     standard_packages['pip'] = list()
     with open(apt_requirements_filename, 'r') as a:
@@ -247,6 +248,36 @@ def load_configuration_file(configuration_filename):
                                         fallback=enable_cmu_sphinx_fallback)
 
     return configuration
+
+
+def write_dockerfile(base_directory_full_path,
+                     dockerfile,
+                     dockerfile_string):
+    """Write the dockerfile string to a proper file."""
+    assert isinstance(base_directory_full_path, str)
+    assert isinstance(dockerfile, str)
+    assert isinstance(dockerfile_string, str)
+
+    with open(base_directory_full_path + '/' + dockerfile, 'w') as d:
+        d.write(dockerfile_string)
+
+
+def install_profile(base_directory_full_path,
+                    kalliope_profile_git_url,
+                    docker_image_files_directory):
+    """Copy the profile to the final directory."""
+    assert isinstance(base_directory_full_path, str)
+    assert isinstance(docker_image_files_directory, str)
+    assert isinstance(docker_image_files_directory, str)
+
+    kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
+    kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
+    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
+    command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
+    execute_shell_command(build_shell_command(command))
+    command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + docker_image_files_directory_full_path
+    execute_shell_command(build_shell_command(command))
+
 
 if __name__ == '__main__':
     pass
