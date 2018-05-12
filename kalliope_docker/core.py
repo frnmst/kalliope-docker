@@ -25,6 +25,7 @@ import subprocess
 import shlex
 import yaml
 import configparser
+from pathlib import Path
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -194,7 +195,8 @@ def load_configuration_file(configuration_filename):
 
     # Set fallbacks in case configuration (file is missing???) or variable not
     # set.
-    base_directory_full_path_fallback=''
+    home_directory=str(Path.home())
+    base_directory_full_path_fallback=home_directory + '/' + '.cache/kalliope-docker'
     kalliope_profile_git_url_fallback='https://github.com/kalliope-project/kalliope_starter_en'
     timezone_fallback='America/New_York'
     docker_image_tag_fallback='kalliope-docker'
