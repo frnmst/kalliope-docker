@@ -13,7 +13,7 @@ Welcome to kalliope_docker's documentation!
    install
    features
    notes
-
+   copyright_license
 
 Indices and tables
 ==================
