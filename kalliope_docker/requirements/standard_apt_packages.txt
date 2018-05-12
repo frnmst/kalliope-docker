@@ -3,7 +3,6 @@ git
 python-dev
 libsmpeg0
 flac
-dialog
 libffi-dev
 libssl-dev
 portaudio19-dev
