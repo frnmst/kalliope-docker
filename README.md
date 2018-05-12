@@ -70,17 +70,6 @@ If no errors are reported, Kalliope should be ready for orders.
 - Python 3 (system)
 - PYaml (Python)
 
-## TODO
-
-- Code refactoring
-- Full documentation on Sphinx
-- Create kalliope:kalliope unprivileged user and group.
-  - `kalliope start` must be run by kalliope:kalliope and access the 
-    shared volumes only.
-- Use the logger module instead of `print` to print the status of the current 
-  operation.
-- Check if there is full network access.
-
 ## Copyright and License
 
 Copyright (c) 2017, Franco Masotti <franco.masotti@student.unife.it>
