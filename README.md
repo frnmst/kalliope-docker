@@ -1,76 +1,44 @@
-# Kalliope Docker Debian
+Kalliope Docker
+===============
 
 Run the voice controlled personal assistant 
-[Kalliope](https://kalliope-project.github.io/) inside a Debian Docker 
-container
+Kalliope_ inside a Debian Docker container.
 
-[![asciicast](https://asciinema.org/a/145756.png)](https://asciinema.org/a/145756)
+.. _Kalliope: https://kalliope-project.github.io/
 
-# Table of contents
+Video
+-----
 
-[](TOC)
+.. image:: https://asciinema.org/a/145756.png
+     :target: https://asciinema.org/a/145756
+     :align: center
 
-- [Kalliope Docker Debian](#kalliope-docker-debian)
-- [Table of contents](#table-of-contents)
-    - [Reasons](#reasons)
-    - [Features](#features)
-        - [Notes](#notes)
-    - [How to](#how-to)
-        - [Dependencies](#dependencies)
-    - [TODO](#todo)
-    - [Copyright and License](#copyright-and-license)
-
-[](TOC)
-
-## Reasons
+Reasons
+-------
 
 - Debian-based distros are not your daily GNU/Linux distributions.
 - Deploy Kalliope in a matter of minutes.
 
-## Features
-
-- Audio I/O
-- Shared directory
-  - Edit configuration
-- Network access
-  - LAN, using LAN addresses directly
-  - Internet
-- No proprietary dependencies (notably: no `libttspico-utils`)
-
-### Notes
-
-- Containers for this image are run in ephemeral mode. this means that 
-  one the container is stopped, it is automatically deleted. This is 
-  possible since we use a shared voulme for the files.
-- You should edit your profile to use espeak as the default TTS since 
-  it's the only free software offline engine available for the moment.
-  Installation of svox is not supported because it's proprietary software.
-- Once you have defined the profile and resources git links, these will be 
-  already configured when Kalliope starts. The purpose is to separate 
-  completely the profile from the other components such as the neurons
-  so that the user always works with a clean and more manageable profile.
-  
-
-## How to
+How to
+------
 
 1. Copy `kalliope_docker.conf.dist` to `kalliope_docker.conf`
 2. Edit it based on your needs. Variables are self explanatory.
 3. Then:
 
+
+::
+
+
         $ ./kalliope_docker.py setup generate
         $ ./kalliope_docker.py image create
         $ ./kalliope_docker.py container run
 
+
 If no errors are reported, Kalliope should be ready for orders.
 
-### Dependencies
-
-- Docker (system)
-- Git (system)
-- Python 3 (system)
-- PYaml (Python)
-
-## Copyright and License
+Copyright and License
+---------------------
 
 Copyright (c) 2017, Franco Masotti <franco.masotti@student.unife.it>
 
