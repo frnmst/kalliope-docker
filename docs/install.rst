@@ -26,10 +26,12 @@ Dependencies
 ------------
 
 - Python 3.x
+- fpyutils_
 - PYaml_
 - Docker_
 - Git_
 
+.. _fpyutils: https://github.com/frnmst/fpyutils
 .. _PYaml: http://pyyaml.org/wiki/PyYAML
 .. _Docker: https://www.docker.com/
 .. _Git: http://git-scm.com/

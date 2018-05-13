@@ -21,11 +21,10 @@
 # SOFTWARE.
 """The main functions."""
 
-import subprocess
-import shlex
 import yaml
 import configparser
 from pathlib import Path
+from fpyutils import (build_shell_command, execute_shell_command)
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -83,22 +82,6 @@ def generate_dockerfile(
     dockerfile += "CMD /bin/bash -c 'kalliope start'\n"
 
     return dockerfile
-
-
-def build_shell_command(command):
-    """Return a space tokenized list from a shell command string."""
-    assert isinstance(command, str)
-    return shlex.split(command)
-
-
-def execute_shell_command(command, interactive=False):
-    """Execute a shell command either interactively or in the background."""
-    assert isinstance(command, list)
-    assert isinstance(interactive, bool)
-    if interactive:
-        outs, errs = subprocess.Popen(command).communicate()
-    else:
-        subprocess.Popen(command)
 
 
 def get_git_repository_name_from_url(url):
