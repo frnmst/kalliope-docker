@@ -25,8 +25,7 @@ import argparse
 import textwrap
 from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files,
-                   install_profile, generate_dockerfile,
-                   write_dockerfile)
+                   generate_dockerfile, write_dockerfile)
 
 PROGRAM_DESCRIPTION='Kalliope Docker: run and setup Kalliope inside a Docker container.'
 PROGRAM_EPILOG=''
@@ -40,6 +39,7 @@ class CliToApi():
         extra_packages = profile_pipeline(
             base_directory_full_path=kalliope_docker_configuration['base_directory_full_path'],
             kalliope_profile_git_url=kalliope_docker_configuration['kalliope_profile_git_url'],
+            docker_image_files_directory=kalliope_docker_configuration['docker_image_files_directory'],
             resources_git_url=kalliope_docker_configuration['resources_git_url']
         )
 
@@ -60,10 +60,6 @@ class CliToApi():
         write_dockerfile(kalliope_docker_configuration['base_directory_full_path'],
                          kalliope_docker_configuration['dockerfile'],
                          dockerfile_string)
-
-        install_profile(kalliope_docker_configuration['base_directory_full_path'],
-                        kalliope_docker_configuration['kalliope_profile_git_url'],
-                        kalliope_docker_configuration['docker_image_files_directory'])
 
 
 class CliInterface():

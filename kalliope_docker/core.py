@@ -84,13 +84,17 @@ def generate_dockerfile(
     return dockerfile
 
 
-def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resources_git_url):
+def profile_pipeline(base_directory_full_path,
+                     kalliope_profile_git_url,
+                     docker_image_files_directory,
+                     resources_git_url):
     """Act on the profile and resources.
 
     :param base_directory_full_path: the base directory where all the cache repositories
         are kept. Every file operation is done within this directory. This
         should be a hidden directory in the user's home.
     :param kalliope_profile_git_url:
+    :param docker_image_files_directory:
     :param resources_git_url:
 
     :returns: a dictionary that will be passed to the docker file generator.
@@ -101,6 +105,7 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
     """
     assert isinstance(base_directory_full_path, str)
     assert isinstance(kalliope_profile_git_url, str)
+    assert isinstance(docker_image_files_directory, str)
     assert isinstance(resources_git_url, list)
 
     extra_packages = dict()
@@ -109,10 +114,20 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
 
     kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
     kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
+
     # Clone the last commit only.
     command = 'git clone --depth 1' + ' ' + kalliope_profile_git_url + ' ' + kalliope_profile_full_path
     execute_shell_command(command,interactive=True)
+
     settings = yaml.load(open(kalliope_profile_full_path + '/settings.yml', 'r'))
+
+    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
+    command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
+    execute_shell_command(command)
+
+    target_profile_full_path = base_directory_full_path + '/' + 'target'
+    command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + target_profile_full_path
+    execute_shell_command(command)
 
     for resource_url in resources_git_url:
         resource_relative_path = get_git_repository_name_from_url(resource_url)
@@ -134,9 +149,13 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
 
         # Copy the resource directory in the profile directory only if
         # necessary thanks to the 'u' option.
-        resource_parent_directory_full_path = kalliope_profile_full_path + '/' + resource_relative_dest_path
+        resource_parent_directory_full_path = target_profile_full_path + '/' + resource_relative_dest_path
         command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
         execute_shell_command(command)
+
+    # Copy and rename to the final directory.
+    command = 'cp -aRu' + ' ' + target_profile_full_path + ' ' + docker_image_files_directory_full_path + '/' + kalliope_profile_relative_path
+    execute_shell_command(command)
 
     return extra_packages
 
@@ -230,23 +249,6 @@ def write_dockerfile(base_directory_full_path,
 
     with open(base_directory_full_path + '/' + dockerfile, 'w') as d:
         d.write(dockerfile_string)
-
-
-def install_profile(base_directory_full_path,
-                    kalliope_profile_git_url,
-                    docker_image_files_directory):
-    """Copy the profile to the final directory."""
-    assert isinstance(base_directory_full_path, str)
-    assert isinstance(docker_image_files_directory, str)
-    assert isinstance(docker_image_files_directory, str)
-
-    kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
-    kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
-    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
-    command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
-    execute_shell_command(command)
-    command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + docker_image_files_directory_full_path
-    execute_shell_command(command)
 
 
 if __name__ == '__main__':
