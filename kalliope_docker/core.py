@@ -24,14 +24,13 @@
 import yaml
 import configparser
 from pathlib import Path
-from fpyutils import (build_shell_command, execute_shell_command,
-                      get_git_repository_name_from_url)
+from fpyutils import (execute_shell_command, get_git_repository_name_from_url)
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
         extra_pip_packages, debian_version, timezone,
         container_shared_home_directory, docker_image_files_directory):
-    """Get a string corresponding to the final dockerfile."""
+    """Get a string corresponding to the final Docker file."""
     assert isinstance(standard_apt_packages, list)
     assert isinstance(extra_apt_packages, list)
     assert isinstance(standard_pip_packages, list)
@@ -112,14 +111,14 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
     kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
     # Clone the last commit only.
     command = 'git clone --depth 1' + ' ' + kalliope_profile_git_url + ' ' + kalliope_profile_full_path
-    execute_shell_command(build_shell_command(command),interactive=True)
+    execute_shell_command(command,interactive=True)
     settings = yaml.load(open(kalliope_profile_full_path + '/settings.yml', 'r'))
 
     for resource_url in resources_git_url:
         resource_relative_path = get_git_repository_name_from_url(resource_url)
         resource_full_path = base_directory_full_path + '/' + resource_relative_path
         command = 'git clone --depth 1' + ' ' + resource_url + ' ' + resource_full_path
-        execute_shell_command(build_shell_command(command),interactive=True)
+        execute_shell_command(command,interactive=True)
 
         for task in yaml.load(open(resource_full_path + '/install.yml', 'r'))[0]['tasks']:
             if 'apt' in task:
@@ -137,7 +136,7 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
         # necessary thanks to the 'u' option.
         resource_parent_directory_full_path = kalliope_profile_full_path + '/' + resource_relative_dest_path
         command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
-        execute_shell_command(build_shell_command(command))
+        execute_shell_command(command)
 
     return extra_packages
 
@@ -245,9 +244,9 @@ def install_profile(base_directory_full_path,
     kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
     docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
     command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
-    execute_shell_command(build_shell_command(command))
+    execute_shell_command(command)
     command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + docker_image_files_directory_full_path
-    execute_shell_command(build_shell_command(command))
+    execute_shell_command(command)
 
 
 if __name__ == '__main__':
