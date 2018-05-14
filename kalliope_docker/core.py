@@ -24,7 +24,8 @@
 import yaml
 import configparser
 from pathlib import Path
-from fpyutils import (build_shell_command, execute_shell_command)
+from fpyutils import (build_shell_command, execute_shell_command,
+                      get_git_repository_name_from_url)
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -84,19 +85,6 @@ def generate_dockerfile(
     return dockerfile
 
 
-def get_git_repository_name_from_url(url):
-    """Get the repository name from an URL that ends with .git."""
-    assert isinstance(url,str)
-    return url.split('/')[-1].replace('.git','')
-
-
-def load_yaml_file(filename):
-    """Return a data structure containing the loaded yaml file."""
-    assert isinstance(filename, str)
-    with open(filename, 'r') as f:
-        return yaml.load(f)
-
-
 def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resources_git_url):
     """Act on the profile and resources.
 
@@ -125,7 +113,7 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
     # Clone the last commit only.
     command = 'git clone --depth 1' + ' ' + kalliope_profile_git_url + ' ' + kalliope_profile_full_path
     execute_shell_command(build_shell_command(command),interactive=True)
-    settings = load_yaml_file(kalliope_profile_full_path + '/settings.yml')
+    settings = yaml.load(open(kalliope_profile_full_path + '/settings.yml', 'r'))
 
     for resource_url in resources_git_url:
         resource_relative_path = get_git_repository_name_from_url(resource_url)
@@ -133,14 +121,14 @@ def profile_pipeline(base_directory_full_path, kalliope_profile_git_url, resourc
         command = 'git clone --depth 1' + ' ' + resource_url + ' ' + resource_full_path
         execute_shell_command(build_shell_command(command),interactive=True)
 
-        for task in load_yaml_file(resource_full_path + '/install.yml')[0]['tasks']:
+        for task in yaml.load(open(resource_full_path + '/install.yml', 'r'))[0]['tasks']:
             if 'apt' in task:
                 extra_packages['apt'].append(task['apt']['name'])
             if 'pip' in task:
                 extra_packages['pip'].append(task['pip']['name'])
 
         # Parse information to build a relative path to place the resource.
-        dna = load_yaml_file(resource_full_path + '/dna.yml')
+        dna = yaml.load(open(resource_full_path + '/dna.yml', 'r'))
         resource_type = dna['type']
         resource_name = dna['name']
         resource_relative_dest_path = settings['resource_directory'][resource_type]
