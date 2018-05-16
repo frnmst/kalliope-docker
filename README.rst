@@ -17,7 +17,8 @@ Reasons
 -------
 
 - Debian-based distros are not your daily GNU/Linux distributions.
-- Deploy Kalliope in a matter of minutes.
+- Deploy Kalliope in a matter of minutes with all your resources, such as 
+  neurons, stt and tts engines already configured.
 
 How to
 ------
@@ -30,9 +31,9 @@ How to
 ::
 
 
-        $ ./kalliope_docker.py setup generate
-        $ ./kalliope_docker.py image create
-        $ ./kalliope_docker.py container run
+        $ kalliope_docker setup download
+        $ kalliope_docker image build
+        $ kalliope_docker container run
 
 
 If no errors are reported, Kalliope should be ready for orders.
