@@ -23,8 +23,8 @@
 
 import yaml
 import configparser
-from pathlib import Path
 from fpyutils import (execute_shell_command, get_git_repository_name_from_url)
+from .constants import (configuration_fallback)
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -189,52 +189,39 @@ def load_configuration_file(configuration_filename):
     config = configparser.ConfigParser()
     config.read(configuration_filename)
 
-    # Set fallbacks in case configuration (file is missing???) or variable not
-    # set.
-    home_directory=str(Path.home())
-    base_directory_full_path_fallback=home_directory + '/' + '.cache/kalliope-docker'
-    kalliope_profile_git_url_fallback='https://github.com/kalliope-project/kalliope_starter_en'
-    timezone_fallback='America/New_York'
-    docker_image_tag_fallback='kalliope-docker'
-    dockerfile_fallback='Dockerfile'
-    docker_image_files_directory_fallback='kalliope-shared'
-    container_shared_home_directory_fallback='/home/kalliope'
-    debian_version_fallback = 'stretch'
-    enable_cmu_sphinx_fallback = False
-
     configuration = dict()
     configuration['base_directory_full_path'] = config.get('Profile',
                                                            'base directory full path',
-                                                           fallback=base_directory_full_path_fallback)
+                                                           fallback=configuration_fallback['base_directory_full_path'])
     configuration['kalliope_profile_git_url'] = config.get('Profile',
                                                            'Git url',
-                                                           fallback=kalliope_profile_git_url_fallback)
+                                                           fallback=configuration_fallback['kalliope_profile_git_url'])
+    configuration['resources_git_url'] = list()
     if 'Resources' in config:
-        configuration['resources_git_url'] = list()
         resources_items = config.items('Resources')
         for key, resource_git_url in resources_items:
             configuration['resources_git_url'].append(resource_git_url)
     configuration['timezone'] = config.get('Environment',
                                            'Timezone',
-                                           fallback=timezone_fallback)
+                                           fallback=configuration_fallback['timezone'])
     configuration['docker_image_tag'] = config.get('Docker',
                                                    'Docker image tag',
-                                                   fallback=docker_image_tag_fallback)
+                                                   fallback=configuration_fallback['docker_image_tag'])
     configuration['dockerfile'] = config.get('Docker',
                                           'Dockerfile',
-                                          fallback=dockerfile_fallback)
+                                          fallback=configuration_fallback['dockerfile'])
     configuration['docker_image_files_directory'] = config.get('Docker',
                                                 'Image Files directory',
-                                                fallback=docker_image_files_directory_fallback)
+                                                fallback=configuration_fallback['docker_image_files_directory'])
     configuration['container_shared_home_directory'] = config.get('Docker',
                                                       'Container shared home directory',
-                                                      fallback=container_shared_home_directory_fallback)
+                                                      fallback=configuration_fallback['container_shared_home_directory'])
     configuration['debian_version'] = config.get('Docker',
                                         'Debian version',
-                                        fallback=debian_version_fallback)
+                                        fallback=configuration_fallback['debian_version'])
     configuration['enable_cmu_sphinx'] = config.getboolean('Docker',
                                         'Enable CMU Sphinx',
-                                        fallback=enable_cmu_sphinx_fallback)
+                                         fallback=configuration_fallback['enable_cmu_sphinx'])
 
     return configuration
 

@@ -34,7 +34,7 @@ class CliToApi():
     """An interface between the CLI and API functions."""
 
     def setup_download(self, args):
-        kalliope_docker_configuration = load_configuration_file('kalliope_docker.conf.dist')
+        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
 
         extra_packages = profile_pipeline(
             base_directory_full_path=kalliope_docker_configuration['base_directory_full_path'],
@@ -43,7 +43,8 @@ class CliToApi():
             resources_git_url=kalliope_docker_configuration['resources_git_url']
         )
 
-        # FIXME
+        # FIXME. The path of these files will be determined by the method of
+        # installation of kalliope_docker.
         apt_requirements_filename = 'kalliope_docker/requirements/standard_apt_packages.txt'
         pip_requirements_filename = 'kalliope_docker/requirements/standard_pip_packages.txt'
         standard_packages = load_standard_packages_from_files(apt_requirements_filename,
@@ -61,6 +62,13 @@ class CliToApi():
                          kalliope_docker_configuration['dockerfile'],
                          dockerfile_string)
 
+    def placeholder(self, args):
+        pass
+
+    def setup_clear_cache(self, args):
+        pass
+
+
 
 class CliInterface():
     """The interface exposed to the final user."""
@@ -77,9 +85,9 @@ class CliInterface():
             epilog=textwrap.dedent(PROGRAM_EPILOG))
 
         parser.add_argument(
-            # Set default value.
             '-c',
             '--configuration-file',
+            default='kalliope_docker.conf',
             help='the path of the configuration file'
         )
 
@@ -89,20 +97,31 @@ class CliInterface():
 
         setup = subparsers.add_parser(
             'setup',
-            description='Download all dependencies and create a docker image.'
+            description='Download all dependencies'
         )
         sgp = setup.add_subparsers(dest='command')
         sgp.required = True
         setup_download = sgp.add_parser('download', help='download the profile and all the dependencies')
         setup_download.set_defaults(func=CliToApi().setup_download)
-        # build image (build)
-        # clear all deps
-        # remove image
+        setup_clear = sgp.add_parser('clear', help='clear all the cache')
+        setup_clear.set_defaults(func=CliToApi().placeholder)
+        setup_remove = sgp.add_parser('remove', help='remove profile')
+        setup_remove.set_defaults(func=CliToApi().placeholder)
 
+        image = subparsers.add_parser(
+            'image',
+            description='Interact with the Docker image'
+        )
+        igp = image.add_subparsers(dest='command')
+        igp.required = True
+        image_build = igp.add_parser('build', help='build the docker image')
+        image_build.set_defaults(func=CliToApi().placeholder)
+        image_build = igp.add_parser('remove', help='remove the docker image')
+        image_build.set_defaults(func=CliToApi().placeholder)
 
         container = subparsers.add_parser(
             'container',
-            description='Interact with the container.'
+            description='Interact with the Docker container'
         )
         # run (alias start)
         # stop
