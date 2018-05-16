@@ -13,34 +13,6 @@ Video
      :target: https://asciinema.org/a/145756
      :align: center
 
-Reasons
--------
-
-- Debian-based distros are not your daily GNU/Linux distributions.
-- Deploy Kalliope in a matter of minutes with all your resources, such as 
-  neurons, stt and tts engines already configured.
-
-How to
-------
-
-1. Copy `kalliope_docker.conf.dist` to `kalliope_docker.conf`
-2. Edit it based on your needs. Variables are self explanatory.
-3. Then:
-
-
-::
-
-
-        $ kalliope_docker setup download
-        $ kalliope_docker image build
-        $ kalliope_docker container run
-
-
-If no errors are reported, Kalliope should be ready for orders.
-
-You can also use the target directory as Kalliope's profile on a bare metal
-installation.
-
 Copyright and License
 ---------------------
 
