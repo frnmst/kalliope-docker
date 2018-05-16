@@ -76,6 +76,15 @@ class CliToApi():
     def image_remove(self, args):
         pass
 
+    def container_run(self, args):
+        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
+
+        run_docker_container(kalliope_docker_configuration['base_directory_full_path'],
+                         kalliope_docker_configuration['docker_image_files_directory'],
+                         kalliope_docker_configuration['container_shared_home_directory'],
+                         kalliope_docker_configuration['docker_image_tag'],
+                         shell=args.interactive_shell)
+
     def placeholder(self, args):
         pass
 
@@ -98,7 +107,7 @@ class CliInterface():
             '-c',
             '--configuration-file',
             default='kalliope_docker.conf',
-            help='the path of the configuration file'
+            help='path of the configuration file'
         )
 
         subparsers = parser.add_subparsers(
@@ -107,7 +116,7 @@ class CliInterface():
 
         setup = subparsers.add_parser(
             'setup',
-            description='Download all dependencies'
+            description='download all dependencies'
         )
         sgp = setup.add_subparsers(dest='command')
         sgp.required = True
@@ -120,7 +129,7 @@ class CliInterface():
 
         image = subparsers.add_parser(
             'image',
-            description='Interact with the Docker image'
+            description='interact with the Docker image'
         )
         igp = image.add_subparsers(dest='command')
         igp.required = True
@@ -131,9 +140,18 @@ class CliInterface():
 
         container = subparsers.add_parser(
             'container',
-            description='Interact with the Docker container'
+            description='interact with the Docker container'
         )
-        # run (alias start)
+        cgp = container.add_subparsers(dest='command')
+        cgp.required = True
+        container_run = cgp.add_parser('run', help='run the container')
+        container_run.set_defaults(func=CliToApi().container_run)
+        container_run.add_argument(
+            '-i',
+            '--interactive-shell',
+            action='store_true',
+            help='run an interactive shell inside the container'
+        )
         # stop
         # shell
         # remove (in case auto-remove does not work).

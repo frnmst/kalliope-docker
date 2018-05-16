@@ -38,6 +38,9 @@ How to
 
 If no errors are reported, Kalliope should be ready for orders.
 
+You can also use the target directory as Kalliope's profile on a bare metal
+installation.
+
 Copyright and License
 ---------------------
 
