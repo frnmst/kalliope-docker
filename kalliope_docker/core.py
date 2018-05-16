@@ -24,7 +24,7 @@
 import yaml
 import configparser
 from fpyutils import (execute_shell_command, get_git_repository_name_from_url)
-from .constants import (configuration_fallback)
+from .constants import (configuration_fallback, docker_volumes)
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -42,15 +42,18 @@ def generate_dockerfile(
     assert len(standard_apt_packages) > 0
     assert len(standard_pip_packages) > 0
 
-    dockerfile = ''
+    dockerfile = str()
+
+    # Set the debian version.
     dockerfile += "FROM debian:" + debian_version + "\n\n"
 
-    # Install all the packages
+    # Install all the packages.
     dockerfile += "RUN apt-get update && apt-get install -y "
-    dockerfile += ' '.join(standard_apt_packages) + "\n"
+    dockerfile += ' '.join(standard_apt_packages)
     if len(extra_apt_packages) > 0:
         dockerfile += "RUN apt-get install -y "
-        dockerfile += ' '.join(extra_apt_packages) + "\n"
+        dockerfile += ' '.join(extra_apt_packages)
+    dockerfile += "\n"
 
     # Set the locales.
     dockerfile += "RUN locale-gen en_US.UTF-8\n"
@@ -174,10 +177,10 @@ def load_standard_packages_from_files(apt_requirements_filename, pip_requirement
     standard_packages['pip'] = list()
     with open(apt_requirements_filename, 'r') as a:
         for line in a:
-            standard_packages['apt'].append(line)
+            standard_packages['apt'].append(line.strip())
     with open(pip_requirements_filename, 'r') as p:
         for line in p:
-            standard_packages['pip'].append(line)
+            standard_packages['pip'].append(line.strip())
 
     return standard_packages
 
@@ -234,8 +237,45 @@ def write_dockerfile(base_directory_full_path,
     assert isinstance(dockerfile, str)
     assert isinstance(dockerfile_string, str)
 
-    with open(base_directory_full_path + '/' + dockerfile, 'w') as d:
+    dockerfile_full_path = base_directory_full_path + '/' + dockerfile
+    with open(dockerfile_full_path, 'w') as d:
         d.write(dockerfile_string)
+
+
+def build_docker_image(base_directory_full_path,
+                       dockerfile,
+                       docker_image_tag):
+    """Build the docker image."""
+    assert isinstance(base_directory_full_path, str)
+    assert isinstance(dockerfile, str)
+    assert isinstance(docker_image_tag, str)
+
+    dockerfile_full_path = base_directory_full_path + '/' + dockerfile
+    command = 'docker build -t' + ' ' + docker_image_tag + ' ' + '-f' + ' ' + dockerfile_full_path + ' ' + base_directory_full_path
+    execute_shell_command(command)
+
+
+def run_docker_container(base_directory_full_path,
+                         docker_image_files_directory,
+                         container_shared_home_directory,
+                         docker_image_tag,
+                         shell=False):
+    """Run the container either interactively or in the background."""
+    assert isinstance(base_directory_full_path, str)
+    assert isinstance(docker_image_files_directory, str)
+    assert isinstance(container_shared_home_directory, str)
+    assert isinstance(docker_image_tag, str)
+    assert isinstance(shell, bool)
+
+    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
+    command = 'docker run --rm=true --device' + ' ' + docker_volumes['audio'] \
++ ' ' + '-v' + ' ' + docker_image_files_directory_full_path + ':' + container_shared_home_directory
+    if shell:
+        command = command + ' ' + '-it' + ' ' + docker_image_tag + ' ' + '/bin/bash'
+        execute_shell_command(command, interactive=True)
+    else:
+        command = command + ' ' + docker_image_tag
+        execute_shell_command(command)
 
 
 if __name__ == '__main__':

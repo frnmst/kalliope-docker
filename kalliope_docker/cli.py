@@ -25,7 +25,8 @@ import argparse
 import textwrap
 from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files,
-                   generate_dockerfile, write_dockerfile)
+                   generate_dockerfile, write_dockerfile,
+                   build_docker_image, run_docker_container)
 
 PROGRAM_DESCRIPTION='Kalliope Docker: run and setup Kalliope inside a Docker container.'
 PROGRAM_EPILOG=''
@@ -62,12 +63,21 @@ class CliToApi():
                          kalliope_docker_configuration['dockerfile'],
                          dockerfile_string)
 
-    def placeholder(self, args):
-        pass
-
     def setup_clear_cache(self, args):
         pass
 
+    def image_build(self, args):
+        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
+
+        build_docker_image(kalliope_docker_configuration['base_directory_full_path'],
+                       kalliope_docker_configuration['dockerfile'],
+                       kalliope_docker_configuration['docker_image_tag'])
+
+    def image_remove(self, args):
+        pass
+
+    def placeholder(self, args):
+        pass
 
 
 class CliInterface():
@@ -115,9 +125,9 @@ class CliInterface():
         igp = image.add_subparsers(dest='command')
         igp.required = True
         image_build = igp.add_parser('build', help='build the docker image')
-        image_build.set_defaults(func=CliToApi().placeholder)
-        image_build = igp.add_parser('remove', help='remove the docker image')
-        image_build.set_defaults(func=CliToApi().placeholder)
+        image_build.set_defaults(func=CliToApi().image_build)
+        image_remove = igp.add_parser('remove', help='remove the docker image')
+        image_remove.set_defaults(func=CliToApi().image_remove)
 
         container = subparsers.add_parser(
             'container',

@@ -37,3 +37,12 @@ configuration_fallback['container_shared_home_directory']='/home/kalliope'
 configuration_fallback['debian_version']='stretch'
 configuration_fallback['enable_cmu_sphinx']=False
 
+docker_volumes = dict()
+
+docker_volumes['audio']='/dev/snd:/dev/snd:rwm'
+
+
+
+if __name__ == '__main__':
+    pass
+
