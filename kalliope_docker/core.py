@@ -255,6 +255,14 @@ def build_docker_image(base_directory_full_path,
     execute_shell_command(command)
 
 
+def remove_docker_image(docker_image_tag):
+    """Remove the docker image using its tag."""
+    assert isinstance(docker_image_tag, str)
+
+    command = 'docker rmi -f' + ' ' + docker_image_tag
+    execute_shell_command(command, interactive=True)
+
+
 def run_docker_container(base_directory_full_path,
                          docker_image_files_directory,
                          container_shared_home_directory,
@@ -267,9 +275,11 @@ def run_docker_container(base_directory_full_path,
     assert isinstance(docker_image_tag, str)
     assert isinstance(shell, bool)
 
-    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
-    command = 'docker run --rm=true --device' + ' ' + docker_volumes['audio'] \
-+ ' ' + '-v' + ' ' + docker_image_files_directory_full_path + ':' + container_shared_home_directory
+    docker_image_files_directory_full_path = (base_directory_full_path + '/'
+        + docker_image_files_directory)
+    command = ('docker run --rm=true --device' + ' ' + docker_volumes['audio']
+        + ' ' + '-v' + ' ' + docker_image_files_directory_full_path + ':'
+        + container_shared_home_directory)
     if shell:
         command = command + ' ' + '-it' + ' ' + docker_image_tag + ' ' + '/bin/bash'
         execute_shell_command(command, interactive=True)

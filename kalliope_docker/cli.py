@@ -26,7 +26,9 @@ import textwrap
 from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files,
                    generate_dockerfile, write_dockerfile,
-                   build_docker_image, run_docker_container)
+                   build_docker_image, remove_docker_image,
+                   run_docker_container)
+from .constants import (file_paths)
 
 PROGRAM_DESCRIPTION='Kalliope Docker: run and setup Kalliope inside a Docker container.'
 PROGRAM_EPILOG=''
@@ -44,12 +46,8 @@ class CliToApi():
             resources_git_url=kalliope_docker_configuration['resources_git_url']
         )
 
-        # FIXME. The path of these files will be determined by the method of
-        # installation of kalliope_docker.
-        apt_requirements_filename = 'kalliope_docker/requirements/standard_apt_packages.txt'
-        pip_requirements_filename = 'kalliope_docker/requirements/standard_pip_packages.txt'
-        standard_packages = load_standard_packages_from_files(apt_requirements_filename,
-                                                              pip_requirements_filename)
+        standard_packages = load_standard_packages_from_files(file_paths['apt_requirements'],
+                                                              file_paths['pip_requirements'])
 
         dockerfile_string = generate_dockerfile(
         standard_packages['apt'], extra_packages['apt'],
@@ -66,6 +64,9 @@ class CliToApi():
     def setup_clear_cache(self, args):
         pass
 
+    def setup_remove_profile(self, args):
+        pass
+
     def image_build(self, args):
         kalliope_docker_configuration = load_configuration_file(args.configuration_file)
 
@@ -74,7 +75,9 @@ class CliToApi():
                        kalliope_docker_configuration['docker_image_tag'])
 
     def image_remove(self, args):
-        pass
+        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
+
+        remove_docker_image(kalliope_docker_configuration['docker_image_tag'])
 
     def container_run(self, args):
         kalliope_docker_configuration = load_configuration_file(args.configuration_file)
@@ -85,8 +88,6 @@ class CliToApi():
                          kalliope_docker_configuration['docker_image_tag'],
                          shell=args.interactive_shell)
 
-    def placeholder(self, args):
-        pass
 
 
 class CliInterface():
@@ -106,7 +107,7 @@ class CliInterface():
         parser.add_argument(
             '-c',
             '--configuration-file',
-            default='kalliope_docker.conf',
+            default=file_paths['kalliope_docker_configuration'],
             help='path of the configuration file'
         )
 
@@ -123,9 +124,9 @@ class CliInterface():
         setup_download = sgp.add_parser('download', help='download the profile and all the dependencies')
         setup_download.set_defaults(func=CliToApi().setup_download)
         setup_clear = sgp.add_parser('clear', help='clear all the cache')
-        setup_clear.set_defaults(func=CliToApi().placeholder)
+        setup_clear.set_defaults(func=CliToApi().setup_clear_cache)
         setup_remove = sgp.add_parser('remove', help='remove profile')
-        setup_remove.set_defaults(func=CliToApi().placeholder)
+        setup_remove.set_defaults(func=CliToApi().setup_remove_profile)
 
         image = subparsers.add_parser(
             'image',

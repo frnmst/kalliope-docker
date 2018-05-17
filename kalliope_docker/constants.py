@@ -26,7 +26,6 @@ from pathlib import Path
 home_directory=str(Path.home())
 
 configuration_fallback = dict()
-
 configuration_fallback['base_directory_full_path']=home_directory + '/' + '.cache/kalliope-docker'
 configuration_fallback['kalliope_profile_git_url']='https://github.com/kalliope-project/kalliope_starter_en'
 configuration_fallback['timezone']='America/New_York'
@@ -38,9 +37,12 @@ configuration_fallback['debian_version']='stretch'
 configuration_fallback['enable_cmu_sphinx']=False
 
 docker_volumes = dict()
-
 docker_volumes['audio']='/dev/snd:/dev/snd:rwm'
 
+file_paths = dict()
+file_paths['apt_requirements'] = 'kalliope_docker/requirements/standard_apt_packages.txt'
+file_paths['pip_requirements'] = 'kalliope_docker/requirements/standard_pip_packages.txt'
+file_paths['kalliope_docker_configuration'] = 'kalliope_docker.conf'
 
 
 if __name__ == '__main__':
