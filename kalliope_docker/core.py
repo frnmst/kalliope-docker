@@ -241,6 +241,19 @@ def write_dockerfile(base_directory_full_path,
     with open(dockerfile_full_path, 'w') as d:
         d.write(dockerfile_string)
 
+def clear_cache():
+    pass
+
+def remove_profile(base_directory_full_path,
+                   docker_image_files_directory):
+    """Remove the profile."""
+    assert isinstance(base_directory_full_path, str)
+    assert isinstance(docker_image_files_directory, str)
+
+    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
+    command = 'rm -rf' + ' ' + docker_image_files_directory_full_path
+    execute_shell_command(command, interactive=True)
+
 
 def build_docker_image(base_directory_full_path,
                        dockerfile,

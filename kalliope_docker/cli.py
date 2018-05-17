@@ -26,6 +26,7 @@ import textwrap
 from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files,
                    generate_dockerfile, write_dockerfile,
+                   remove_profile,
                    build_docker_image, remove_docker_image,
                    run_docker_container)
 from .constants import (file_paths)
@@ -65,7 +66,10 @@ class CliToApi():
         pass
 
     def setup_remove_profile(self, args):
-        pass
+        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
+
+        remove_profile(kalliope_docker_configuration['base_directory_full_path'],
+                       kalliope_docker_configuration['docker_image_files_directory'])
 
     def image_build(self, args):
         kalliope_docker_configuration = load_configuration_file(args.configuration_file)
