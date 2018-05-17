@@ -40,9 +40,10 @@ docker_volumes = dict()
 docker_volumes['audio']='/dev/snd:/dev/snd:rwm'
 
 file_paths = dict()
+file_paths['config_directory'] = home_directory + '/' + '.config/kalliope_docker'
 file_paths['apt_requirements'] = 'kalliope_docker/requirements/standard_apt_packages.txt'
 file_paths['pip_requirements'] = 'kalliope_docker/requirements/standard_pip_packages.txt'
-file_paths['kalliope_docker_configuration'] = 'kalliope_docker.conf'
+file_paths['kalliope_docker_configuration'] = file_paths['config_directory'] + '/' + 'kalliope_docker.conf'
 
 
 if __name__ == '__main__':

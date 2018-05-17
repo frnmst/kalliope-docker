@@ -29,7 +29,8 @@ from .constants import (configuration_fallback, docker_volumes)
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
         extra_pip_packages, debian_version, timezone,
-        container_shared_home_directory, docker_image_files_directory):
+        container_shared_home_directory, docker_image_files_directory,
+        kalliope_profile_git_url):
     """Get a string corresponding to the final Docker file."""
     assert isinstance(standard_apt_packages, list)
     assert isinstance(extra_apt_packages, list)
@@ -39,6 +40,7 @@ def generate_dockerfile(
     assert isinstance(timezone, str)
     assert isinstance(container_shared_home_directory, str)
     assert isinstance(docker_image_files_directory, str)
+    assert isinstance(kalliope_profile_git_url, str)
     assert len(standard_apt_packages) > 0
     assert len(standard_pip_packages) > 0
 
@@ -49,11 +51,10 @@ def generate_dockerfile(
 
     # Install all the packages.
     dockerfile += "RUN apt-get update && apt-get install -y "
-    dockerfile += ' '.join(standard_apt_packages)
+    dockerfile += ' '.join(standard_apt_packages) + "\n"
     if len(extra_apt_packages) > 0:
         dockerfile += "RUN apt-get install -y "
-        dockerfile += ' '.join(extra_apt_packages)
-    dockerfile += "\n"
+        dockerfile += ' '.join(extra_apt_packages) + "\n"
 
     # Set the locales.
     dockerfile += "RUN locale-gen en_US.UTF-8\n"
@@ -80,7 +81,8 @@ def generate_dockerfile(
     dockerfile += "RUN chown -R kalliope:kalliope $HOME\n\n"
 
     # Execute the Kalliope command.
-    dockerfile += "WORKDIR $HOME/" + docker_image_files_directory + "\n"
+    kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
+    dockerfile += "WORKDIR $HOME/" + kalliope_profile_relative_path + "\n"
     dockerfile += "USER kalliope\n"
     dockerfile += "CMD /bin/bash -c 'kalliope start'\n"
 

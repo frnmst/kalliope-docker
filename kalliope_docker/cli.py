@@ -56,7 +56,8 @@ class CliToApi():
         kalliope_docker_configuration['debian_version'],
         kalliope_docker_configuration['timezone'],
         kalliope_docker_configuration['container_shared_home_directory'],
-        kalliope_docker_configuration['docker_image_files_directory'])
+        kalliope_docker_configuration['docker_image_files_directory'],
+        kalliope_docker_configuration['kalliope_profile_git_url'])
 
         write_dockerfile(kalliope_docker_configuration['base_directory_full_path'],
                          kalliope_docker_configuration['dockerfile'],
