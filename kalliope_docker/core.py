@@ -137,11 +137,12 @@ def profile_pipeline(base_directory_full_path,
     settings = yaml.load(open(kalliope_profile_full_path + '/settings.yml', 'r'))
 
     docker_image_files_directory_full_path = (shlex.quote(base_directory_full_path)
-    + '/' + shlex.quote(docker_image_files_directory))
+        + '/' + shlex.quote(docker_image_files_directory))
     command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
     subprocess.Popen(shlex.split(command))
 
-    target_profile_full_path = shlex.quote(base_directory_full_path) + '/' + 'target'
+    target_profile_full_path = (shlex.quote(base_directory_full_path)
+        + '/' + file_paths['target_profile_directory'])
     command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + target_profile_full_path
     subprocess.Popen(shlex.split(command))
 
@@ -257,7 +258,8 @@ def write_dockerfile(base_directory_full_path,
     with open(dockerfile_full_path, 'w') as d:
         d.write(dockerfile_string)
 
-def clear_cache():
+def clear_cache(base_directory_full_path):
+    # rm -rf Dockerfile target starter <resources returned by profile pipeline>
     pass
 
 def remove_profile(base_directory_full_path,

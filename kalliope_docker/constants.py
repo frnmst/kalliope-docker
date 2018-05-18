@@ -45,6 +45,9 @@ file_paths['apt_requirements'] = 'kalliope_docker/requirements/standard_apt_pack
 file_paths['pip_requirements'] = 'kalliope_docker/requirements/standard_pip_packages.txt'
 file_paths['kalliope_docker_configuration'] = file_paths['config_directory'] + '/' + 'kalliope_docker.conf'
 
+# The final profile that gets copied under
+# configuration_fallback['base_directory_full_path']
+file_paths['target_profile_directory'] = 'target'
 
 if __name__ == '__main__':
     pass
