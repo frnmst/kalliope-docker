@@ -82,13 +82,13 @@ def generate_dockerfile(
     audio_group_id = (subprocess.run(command, shell=True, stdout=subprocess.PIPE)).stdout.strip().decode('ascii')
 
     # Setup initial environment.
-    dockerfile += "ENV HOME " + container_shared_home_directory + "\n"
+    dockerfile += "ENV HOME " + shlex.quote(container_shared_home_directory) + "\n"
     dockerfile += "RUN groupadd -g" + " " + audio_group_id + " " + "kalliope\n"
     dockerfile += "RUN useradd -u 1000 -g" + " " + audio_group_id + " " + "--create-home kalliope\n"
     dockerfile += "RUN chown -R kalliope:kalliope $HOME\n\n"
 
     # Execute the Kalliope command.
-    kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
+    kalliope_profile_relative_path = get_git_repository_name_from_url(shlex.quote(kalliope_profile_git_url))
     dockerfile += "WORKDIR $HOME/" + kalliope_profile_relative_path + "\n"
     dockerfile += "USER kalliope\n"
     dockerfile += "CMD /bin/bash -c 'kalliope start'\n"
