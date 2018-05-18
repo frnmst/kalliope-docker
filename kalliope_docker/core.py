@@ -166,7 +166,8 @@ def profile_pipeline(base_directory_full_path,
         # Copy the resource directory in the profile directory only if
         # necessary thanks to the 'u' option.
         resource_parent_directory_full_path = target_profile_full_path + '/' + resource_relative_dest_path
-        command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
+        target_resource_full_path = resource_parent_directory_full_path + '/' + resource_name
+        command = 'cp -aRu' + ' ' + resource_full_path + ' ' + target_resource_full_path
         subprocess.Popen(shlex.split(command))
 
     # Copy and rename to the final directory.
