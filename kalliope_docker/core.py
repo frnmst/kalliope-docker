@@ -24,7 +24,7 @@
 import yaml
 import configparser
 from fpyutils import (get_git_repository_name_from_url)
-from .constants import (configuration_fallback, docker_volumes)
+from .constants import (configuration_fallback, docker_volumes, file_paths)
 import subprocess
 import shlex
 
