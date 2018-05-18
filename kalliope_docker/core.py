@@ -23,8 +23,10 @@
 
 import yaml
 import configparser
-from fpyutils import (execute_shell_command, get_git_repository_name_from_url)
+from fpyutils import (get_git_repository_name_from_url)
 from .constants import (configuration_fallback, docker_volumes)
+import subprocess
+import shlex
 
 def generate_dockerfile(
         standard_apt_packages, extra_apt_packages, standard_pip_packages,
@@ -74,10 +76,15 @@ def generate_dockerfile(
         dockerfile += "RUN pip install " + ' '.join(extra_pip_packages) + "\n"
     dockerfile += "\n"
 
+    # To access the audio devices we need the 'audio' group id of the host
+    # system.
+    command = 'getent group audio | cut -d: -f 3'
+    audio_group_id = (subprocess.run(command, shell=True, stdout=subprocess.PIPE)).stdout.strip().decode('ascii')
+
     # Setup initial environment.
     dockerfile += "ENV HOME " + container_shared_home_directory + "\n"
-    dockerfile += "RUN groupadd -g 1001 kalliope\n"
-    dockerfile += "RUN useradd -u 1000 -g 1001 --create-home kalliope\n"
+    dockerfile += "RUN groupadd -g" + " " + audio_group_id + " " + "kalliope\n"
+    dockerfile += "RUN useradd -u 1000 -g" + " " + audio_group_id + " " + "--create-home kalliope\n"
     dockerfile += "RUN chown -R kalliope:kalliope $HOME\n\n"
 
     # Execute the Kalliope command.
@@ -117,28 +124,32 @@ def profile_pipeline(base_directory_full_path,
     extra_packages['apt'] = list()
     extra_packages['pip'] = list()
 
-    kalliope_profile_relative_path = get_git_repository_name_from_url(kalliope_profile_git_url)
-    kalliope_profile_full_path = base_directory_full_path + '/' + kalliope_profile_relative_path
+    kalliope_profile_relative_path = shlex.quote(get_git_repository_name_from_url(kalliope_profile_git_url))
+    kalliope_profile_full_path = (shlex.quote(base_directory_full_path) + '/'
+        + shlex.quote(kalliope_profile_relative_path))
 
     # Clone the last commit only.
-    command = 'git clone --depth 1' + ' ' + kalliope_profile_git_url + ' ' + kalliope_profile_full_path
-    execute_shell_command(command,interactive=True)
+    command = ('git clone --depth 1' + ' '
+        + shlex.quote(kalliope_profile_git_url) + ' '
+        + shlex.quote(kalliope_profile_full_path))
+    subprocess.run(command, shell=True)
 
     settings = yaml.load(open(kalliope_profile_full_path + '/settings.yml', 'r'))
 
-    docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
+    docker_image_files_directory_full_path = (shlex.quote(base_directory_full_path)
+    + '/' + shlex.quote(docker_image_files_directory))
     command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
-    execute_shell_command(command)
+    subprocess.Popen(shlex.split(command))
 
-    target_profile_full_path = base_directory_full_path + '/' + 'target'
+    target_profile_full_path = shlex.quote(base_directory_full_path) + '/' + 'target'
     command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + target_profile_full_path
-    execute_shell_command(command)
+    subprocess.Popen(shlex.split(command))
 
     for resource_url in resources_git_url:
-        resource_relative_path = get_git_repository_name_from_url(resource_url)
-        resource_full_path = base_directory_full_path + '/' + resource_relative_path
+        resource_relative_path = get_git_repository_name_from_url(shlex.quote(resource_url))
+        resource_full_path = shlex.quote(base_directory_full_path) + '/' + resource_relative_path
         command = 'git clone --depth 1' + ' ' + resource_url + ' ' + resource_full_path
-        execute_shell_command(command,interactive=True)
+        subprocess.run(command, shell=True)
 
         for task in yaml.load(open(resource_full_path + '/install.yml', 'r'))[0]['tasks']:
             if 'apt' in task:
@@ -156,11 +167,13 @@ def profile_pipeline(base_directory_full_path,
         # necessary thanks to the 'u' option.
         resource_parent_directory_full_path = target_profile_full_path + '/' + resource_relative_dest_path
         command = 'cp -aRu' + ' ' + resource_full_path + ' ' + resource_parent_directory_full_path
-        execute_shell_command(command)
+        subprocess.Popen(shlex.split(command))
 
     # Copy and rename to the final directory.
-    command = 'cp -aRu' + ' ' + target_profile_full_path + ' ' + docker_image_files_directory_full_path + '/' + kalliope_profile_relative_path
-    execute_shell_command(command)
+    command = ('cp -aRu' + ' ' + target_profile_full_path + ' '
+        + docker_image_files_directory_full_path + '/'
+        + kalliope_profile_relative_path)
+    subprocess.Popen(shlex.split(command))
 
     return extra_packages
 
@@ -253,8 +266,8 @@ def remove_profile(base_directory_full_path,
     assert isinstance(docker_image_files_directory, str)
 
     docker_image_files_directory_full_path = base_directory_full_path + '/' + docker_image_files_directory
-    command = 'rm -rf' + ' ' + docker_image_files_directory_full_path
-    execute_shell_command(command, interactive=True)
+    command = 'rm -rf' + ' ' + shlex.quote(docker_image_files_directory_full_path)
+    subprocess.run(command, shell=True, check=True)
 
 
 def build_docker_image(base_directory_full_path,
@@ -266,16 +279,18 @@ def build_docker_image(base_directory_full_path,
     assert isinstance(docker_image_tag, str)
 
     dockerfile_full_path = base_directory_full_path + '/' + dockerfile
-    command = 'docker build -t' + ' ' + docker_image_tag + ' ' + '-f' + ' ' + dockerfile_full_path + ' ' + base_directory_full_path
-    execute_shell_command(command)
+    command = ('docker build -t' + ' ' + shlex.quote(docker_image_tag) + ' '
+              + '-f' + ' ' + shlex.quote(dockerfile_full_path) + ' ' +
+              shlex.quote(base_directory_full_path))
+    subprocess.run(command, shell=True, check=True)
 
 
 def remove_docker_image(docker_image_tag):
     """Remove the docker image using its tag."""
     assert isinstance(docker_image_tag, str)
 
-    command = 'docker rmi -f' + ' ' + docker_image_tag
-    execute_shell_command(command, interactive=True)
+    command = 'docker rmi -f' + ' ' + shlex.quote(docker_image_tag)
+    subprocess.run(command, shell=True, check=True)
 
 
 def run_docker_container(base_directory_full_path,
@@ -292,15 +307,16 @@ def run_docker_container(base_directory_full_path,
 
     docker_image_files_directory_full_path = (base_directory_full_path + '/'
         + docker_image_files_directory)
-    command = ('docker run --rm=true --device' + ' ' + docker_volumes['audio']
-        + ' ' + '-v' + ' ' + docker_image_files_directory_full_path + ':'
-        + container_shared_home_directory)
+    command = ('docker run --rm=true --device' + ' '
+        + shlex.quote(docker_volumes['audio']) + ' ' + '-v' + ' '
+        + shlex.quote(docker_image_files_directory_full_path) + ':'
+        + shlex.quote(container_shared_home_directory))
     if shell:
-        command = command + ' ' + '-it' + ' ' + docker_image_tag + ' ' + '/bin/bash'
-        execute_shell_command(command, interactive=True)
+        command = command + ' ' + '-it' + ' ' + shlex.quote(docker_image_tag) + ' ' + '/bin/bash'
+        subprocess.run(command, shell=True, check=True)
     else:
-        command = command + ' ' + docker_image_tag
-        execute_shell_command(command)
+        command = command + ' ' + shlex.quote(docker_image_tag)
+        subprocess.Popen(shlex.split(command), stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 
 
 if __name__ == '__main__':
