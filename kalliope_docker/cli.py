@@ -26,7 +26,7 @@ import textwrap
 from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files,
                    generate_dockerfile, write_dockerfile,
-                   remove_profile,
+                   remove_profile, clear_cache,
                    build_docker_image, remove_docker_image,
                    run_docker_container)
 from .constants import (file_paths)
@@ -56,7 +56,6 @@ class CliToApi():
         kalliope_docker_configuration['debian_version'],
         kalliope_docker_configuration['timezone'],
         kalliope_docker_configuration['container_shared_home_directory'],
-        kalliope_docker_configuration['docker_image_files_directory'],
         kalliope_docker_configuration['kalliope_profile_git_url'])
 
         write_dockerfile(kalliope_docker_configuration['base_directory_full_path'],
@@ -64,7 +63,8 @@ class CliToApi():
                          dockerfile_string)
 
     def setup_clear_cache(self, args):
-        pass
+        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
+        clear_cache()
 
     def setup_remove_profile(self, args):
         kalliope_docker_configuration = load_configuration_file(args.configuration_file)
@@ -159,7 +159,6 @@ class CliInterface():
             help='run an interactive shell inside the container'
         )
         # stop
-        # shell
         # remove (in case auto-remove does not work).
 
         return parser

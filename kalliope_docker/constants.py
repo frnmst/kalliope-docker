@@ -49,6 +49,14 @@ file_paths['kalliope_docker_configuration'] = file_paths['config_directory'] + '
 # configuration_fallback['base_directory_full_path']
 file_paths['target_profile_directory'] = 'target'
 
+kalliope_profile = dict()
+kalliope_profile['settings_file']='settings.yml'
+
+resource=dict()
+resource['install_file']='install.yml'
+resource['dna_file']='dna.yml'
+
+
 if __name__ == '__main__':
     pass
 
