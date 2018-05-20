@@ -294,30 +294,13 @@ def write_dockerfile(base_directory_full_path,
         d.write(dockerfile_string)
 
 
-def clear_cache(base_directory_full_path,
-                kalliope_profile_git_url,
-                dockerfile):
-    # rm -rf Dockerfile target starter <resources returned by profile pipeline>
-    # dockerfile_full_path =
-    #target_profile_full_path = (shlex.quote(base_directory_full_path)
-    #    + '/' + file_paths['target_profile_directory'])
-
-#    command=('rm -rf' + ' ' + dockerfile_full_path + ' ' + 
- #       target_profile_full_path + ' ' + )
-    pass
-
-def remove_profile(base_directory_full_path,
-                   docker_image_files_directory):
-    """Remove the profile."""
+def clear_cache(base_directory_full_path):
+    """Remove all the cache."""
     assert isinstance(base_directory_full_path, str)
-    assert isinstance(docker_image_files_directory, str)
 
-    vars = quote_for_shell(base_directory_full_path=base_directory_full_path,
-                           docker_image_files_directory=docker_image_files_directory)
+    vars = quote_for_shell(base_directory_full_path=base_directory_full_path)
 
-    docker_image_files_directory_full_path = (vars['base_directory_full_path']
-        + '/' + vars['docker_image_files_directory'])
-    command = 'rm -rf' + ' ' + docker_image_files_directory_full_path
+    command='rm -rf' + ' ' + vars['base_directory_full_path']
     subprocess.run(command, shell=True, check=True)
 
 

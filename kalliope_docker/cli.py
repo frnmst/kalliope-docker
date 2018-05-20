@@ -26,8 +26,7 @@ import textwrap
 from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files,
                    generate_dockerfile, write_dockerfile,
-                   remove_profile, clear_cache,
-                   build_docker_image, remove_docker_image,
+                   clear_cache, build_docker_image, remove_docker_image,
                    run_docker_container)
 from .constants import (file_paths)
 
@@ -64,13 +63,8 @@ class CliToApi():
 
     def setup_clear_cache(self, args):
         kalliope_docker_configuration = load_configuration_file(args.configuration_file)
-        clear_cache()
 
-    def setup_remove_profile(self, args):
-        kalliope_docker_configuration = load_configuration_file(args.configuration_file)
-
-        remove_profile(kalliope_docker_configuration['base_directory_full_path'],
-                       kalliope_docker_configuration['docker_image_files_directory'])
+        clear_cache(kalliope_docker_configuration['base_directory_full_path'])
 
     def image_build(self, args):
         kalliope_docker_configuration = load_configuration_file(args.configuration_file)
@@ -130,8 +124,6 @@ class CliInterface():
         setup_download.set_defaults(func=CliToApi().setup_download)
         setup_clear = sgp.add_parser('clear', help='clear all the cache')
         setup_clear.set_defaults(func=CliToApi().setup_clear_cache)
-        setup_remove = sgp.add_parser('remove', help='remove profile')
-        setup_remove.set_defaults(func=CliToApi().setup_remove_profile)
 
         image = subparsers.add_parser(
             'image',
