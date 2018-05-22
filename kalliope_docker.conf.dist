@@ -28,4 +28,6 @@ Docker image files directory = kalliope-shared
 # The name of the home directory that is used inside the container.
 Container shared home directory = /home/kalliope
 Debian version = stretch
-Enable CMU Sphinx = no
+
+[CMU Sphinx]
+language1 = it-IT

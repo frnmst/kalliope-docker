@@ -34,7 +34,7 @@ configuration_fallback['dockerfile']='Dockerfile'
 configuration_fallback['docker_image_files_directory']='kalliope-shared'
 configuration_fallback['container_shared_home_directory']='/home/kalliope'
 configuration_fallback['debian_version']='stretch'
-configuration_fallback['enable_cmu_sphinx']=False
+configuration_fallback['cmu_sphinx_languages']=list()
 
 docker_volumes = dict()
 docker_volumes['audio']='/dev/snd:/dev/snd:rwm'
@@ -56,6 +56,21 @@ resource=dict()
 resource['install_file']='install.yml'
 resource['dna_file']='dna.yml'
 
+cmu_sphinx = dict()
+
+cmu_sphinx['apt_packages'] = list()
+cmu_sphinx['apt_packages'] = ['swig', 'libpulse-dev', 'wget', 'unzip']
+
+cmu_sphinx['pip_packages'] = list()
+cmu_sphinx['pip_packages'] = ['pocketsphinx']
+
+cmu_sphinx['language_models'] = dict()
+# See
+# https://github.com/Uberi/speech_recognition/blob/master/reference/pocketsphinx.rst#installing-other-languages
+# https://github.com/Uberi/speech_recognition/issues/192
+cmu_sphinx['language_models']['it-IT'] = 'https://github.com/Uberi/speech_recognition/files/683258/it-IT.zip'
+cmu_sphinx['language_models']['fr-FR'] = 'https://db.tt/tVNcZXao'
+cmu_sphinx['language_models']['zh-CN'] = 'https://db.tt/2YQVXmEk'
 
 if __name__ == '__main__':
     pass

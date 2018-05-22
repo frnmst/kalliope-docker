@@ -3,7 +3,7 @@ Features
 
 - Audio I/O
 - Shared directory
-  - Edit configuration
+  - Editable configuration
 - Network access
   - LAN, using LAN addresses directly
   - Internet

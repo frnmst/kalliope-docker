@@ -27,7 +27,8 @@ from .constants import (configuration_fallback,
                         docker_volumes,
                         file_paths,
                         kalliope_profile,
-                        resource)
+                        resource,
+                        cmu_sphinx)
 import subprocess
 import shlex
 
@@ -60,7 +61,8 @@ def generate_dockerfile(standard_apt_packages,
                         debian_version,
                         timezone,
                         container_shared_home_directory,
-                        kalliope_profile_git_url):
+                        kalliope_profile_git_url,
+                        cmu_sphinx_languages):
     """Get a string corresponding to the final Docker file."""
     assert isinstance(standard_apt_packages, list)
     assert isinstance(extra_apt_packages, list)
@@ -70,12 +72,20 @@ def generate_dockerfile(standard_apt_packages,
     assert isinstance(timezone, str)
     assert isinstance(container_shared_home_directory, str)
     assert isinstance(kalliope_profile_git_url, str)
+    assert isinstance(cmu_sphinx_languages, list)
     assert len(standard_apt_packages) > 0
     assert len(standard_pip_packages) > 0
 
     vars=quote_for_shell(container_shared_home_directory=container_shared_home_directory,
                     kalliope_profile_git_url=kalliope_profile_git_url)
     dockerfile = str()
+
+    # Add the necessary dependencies for CMU Sphinx.
+    if len(cmu_sphinx_languages) > 0:
+        for p in cmu_sphinx['apt_packages']:
+            extra_apt_packages.append(p)
+        for p in cmu_sphinx['pip_packages']:
+            extra_pip_packages.append(p)
 
     # Set the debian version.
     dockerfile += "FROM debian:" + debian_version + "\n\n"
@@ -109,6 +119,23 @@ def generate_dockerfile(standard_apt_packages,
     # system.
     command = 'getent group audio | cut -d: -f 3'
     audio_group_id = (subprocess.run(command, shell=True, stdout=subprocess.PIPE)).stdout.strip().decode('ascii')
+
+    # Install the CMU Sphinx language files.
+    if len(cmu_sphinx_languages) > 0:
+        # Get the path. FIXME: not working.
+        dockerfile += 'ENV SR_LIB="$(python -c \'import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))\')"'
+        dockerfile += "\n"
+        for l in cmu_sphinx_languages:
+            if l in cmu_sphinx['language_models']:
+                # Get the file.
+                dockerfile += "RUN wget" + " " + cmu_sphinx['language_models'][l] + " " + '-O "$SR_LIB' + "/" + l + '.zip"'
+                dockerfile += "\n"
+                # unzip.
+                dockerfile += 'RUN unzip -o "$SR_LIB/pocketsphinx-data' + "/" + l + '.zip" -d "$SR_LIB"'
+                dockerfile += "\n"
+                # chmod.
+                dockerfile += 'RUN chmod --recursive a+r "$SR_LIB' + "/" + l + '/"'
+                dockerfile += "\n"
 
     # Setup initial environment.
     dockerfile += "ENV HOME " + vars['container_shared_home_directory'] + "\n"
@@ -274,9 +301,11 @@ def load_configuration_file(configuration_filename):
     configuration['debian_version'] = config.get('Docker',
                                         'Debian version',
                                         fallback=configuration_fallback['debian_version'])
-    configuration['enable_cmu_sphinx'] = config.getboolean('Docker',
-                                        'Enable CMU Sphinx',
-                                         fallback=configuration_fallback['enable_cmu_sphinx'])
+    configuration['cmu_sphinx_languages'] = configuration_fallback['cmu_sphinx_languages']
+    if 'CMU Sphinx' in config:
+        cmu_sphinx_languages = config.items('CMU Sphinx')
+        for key, language in cmu_sphinx_languages:
+            configuration['cmu_sphinx_languages'].append(language)
 
     return configuration
 
