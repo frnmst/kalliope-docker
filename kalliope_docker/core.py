@@ -23,12 +23,8 @@
 
 import yaml
 import configparser
-from .constants import (configuration_fallback,
-                        docker_volumes,
-                        file_paths,
-                        kalliope_profile,
-                        resource,
-                        cmu_sphinx)
+from .constants import (configuration_fallback, docker_volumes, file_paths,
+                        kalliope_profile, resource, cmu_sphinx)
 import subprocess
 import shlex
 
@@ -36,7 +32,7 @@ import shlex
 def quote_for_shell(**kwargs):
     data = dict()
     for key, value in kwargs.items():
-        data[key]=shlex.quote(value)
+        data[key] = shlex.quote(value)
     return data
 
 
@@ -51,18 +47,14 @@ def get_git_repository_name_from_url(url):
     :raises: the built-in exceptions.
     """
     assert isinstance(url, str)
-    return url.split('/')[-1].replace('.git','')
+    return url.split('/')[-1].replace('.git', '')
 
 
-def generate_dockerfile(standard_apt_packages,
-                        extra_apt_packages,
-                        standard_pip_packages,
-                        extra_pip_packages,
-                        debian_version,
-                        timezone,
+def generate_dockerfile(standard_apt_packages, extra_apt_packages,
+                        standard_pip_packages, extra_pip_packages,
+                        debian_version, timezone,
                         container_shared_home_directory,
-                        kalliope_profile_git_url,
-                        cmu_sphinx_languages):
+                        kalliope_profile_git_url, cmu_sphinx_languages):
     """Get a string corresponding to the final Docker file."""
     assert isinstance(standard_apt_packages, list)
     assert isinstance(extra_apt_packages, list)
@@ -76,8 +68,9 @@ def generate_dockerfile(standard_apt_packages,
     assert len(standard_apt_packages) > 0
     assert len(standard_pip_packages) > 0
 
-    vars=quote_for_shell(container_shared_home_directory=container_shared_home_directory,
-                    kalliope_profile_git_url=kalliope_profile_git_url)
+    vars = quote_for_shell(
+        container_shared_home_directory=container_shared_home_directory,
+        kalliope_profile_git_url=kalliope_profile_git_url)
     dockerfile = str()
 
     # Add the necessary dependencies for CMU Sphinx.
@@ -118,12 +111,16 @@ def generate_dockerfile(standard_apt_packages,
     # To access the audio devices we need the 'audio' group id of the host
     # system.
     command = 'getent group audio | cut -d: -f 3'
-    audio_group_id = (subprocess.run(command, shell=True, stdout=subprocess.PIPE)).stdout.strip().decode('ascii')
+    audio_group_id = (subprocess.run(
+        command, shell=True,
+        stdout=subprocess.PIPE)).stdout.strip().decode('ascii')
 
     # Install the CMU Sphinx language files.
     if len(cmu_sphinx_languages) > 0:
-        # Get the path. FIXME: not working.
-        dockerfile += 'ENV SR_LIB="$(python -c \'import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))\')"'
+        # Get the path. FIXME: not working because of quotation problems or
+        # something..
+        # dockerfile += 'ENV SR_LIB="$(python -c \'import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))\')"'
+        dockerfile += "SR_LIB=/usr/local/lib/python2.7/dist-packages/speech_recognition"
         dockerfile += "\n"
         for l in cmu_sphinx_languages:
             if l in cmu_sphinx['language_models']:
@@ -144,7 +141,8 @@ def generate_dockerfile(standard_apt_packages,
     dockerfile += "RUN chown -R kalliope:kalliope $HOME\n\n"
 
     # Execute the Kalliope command.
-    kalliope_profile_relative_path = get_git_repository_name_from_url(vars['kalliope_profile_git_url'])
+    kalliope_profile_relative_path = get_git_repository_name_from_url(
+        vars['kalliope_profile_git_url'])
     dockerfile += "WORKDIR $HOME/" + kalliope_profile_relative_path + "\n"
     dockerfile += "USER kalliope\n"
     dockerfile += "CMD /bin/bash -c 'kalliope start'\n"
@@ -152,10 +150,8 @@ def generate_dockerfile(standard_apt_packages,
     return dockerfile
 
 
-def profile_pipeline(base_directory_full_path,
-                     kalliope_profile_git_url,
-                     docker_image_files_directory,
-                     resources_git_url):
+def profile_pipeline(base_directory_full_path, kalliope_profile_git_url,
+                     docker_image_files_directory, resources_git_url):
     """Act on the profile and resources.
 
     :param base_directory_full_path: the base directory where all the cache repositories
@@ -176,35 +172,38 @@ def profile_pipeline(base_directory_full_path,
     assert isinstance(docker_image_files_directory, str)
     assert isinstance(resources_git_url, list)
 
-    vars = quote_for_shell(kalliope_profile_git_url=kalliope_profile_git_url,
-                           base_directory_full_path=base_directory_full_path,
-                           docker_image_files_directory=docker_image_files_directory)
+    vars = quote_for_shell(
+        kalliope_profile_git_url=kalliope_profile_git_url,
+        base_directory_full_path=base_directory_full_path,
+        docker_image_files_directory=docker_image_files_directory)
     extra_packages = dict()
     extra_packages['apt'] = list()
     extra_packages['pip'] = list()
 
-    kalliope_profile_relative_path = get_git_repository_name_from_url(vars['kalliope_profile_git_url'])
-    kalliope_profile_full_path = (vars['base_directory_full_path'] + '/'
-        + kalliope_profile_relative_path)
+    kalliope_profile_relative_path = get_git_repository_name_from_url(
+        vars['kalliope_profile_git_url'])
+    kalliope_profile_full_path = (vars['base_directory_full_path'] + '/' +
+                                  kalliope_profile_relative_path)
 
     # Clone the last commit only.
-    command = ('git clone --depth 1' + ' '
-    + vars['kalliope_profile_git_url']
-    + ' ' + kalliope_profile_full_path)
+    command = ('git clone --depth 1' + ' ' + vars['kalliope_profile_git_url'] +
+               ' ' + kalliope_profile_full_path)
     subprocess.run(command, shell=True)
 
-    docker_image_files_directory_full_path = (vars['base_directory_full_path']
-        + '/' + vars['docker_image_files_directory'])
+    docker_image_files_directory_full_path = (
+        vars['base_directory_full_path'] + '/' +
+        vars['docker_image_files_directory'])
     command = 'mkdir -p' + ' ' + docker_image_files_directory_full_path
     subprocess.Popen(shlex.split(command))
 
-    target_profile_full_path = (vars['base_directory_full_path']
-        + '/' + file_paths['target_profile_directory'])
-    command = 'cp -aRu' + ' ' + kalliope_profile_full_path + ' ' + target_profile_full_path
+    target_profile_full_path = (vars['base_directory_full_path'] + '/' +
+                                file_paths['target_profile_directory'])
+    command = 'cp -aRTu' + ' ' + kalliope_profile_full_path + ' ' + target_profile_full_path
     subprocess.Popen(shlex.split(command))
 
     kalliope_profile_settings_full_path = kalliope_profile_full_path + '/' + kalliope_profile['settings_file']
-    profile_settings = yaml.load(open(kalliope_profile_settings_full_path, 'r'))
+    profile_settings = yaml.load(
+        open(kalliope_profile_settings_full_path, 'r'))
     for resource_url in resources_git_url:
         r = quote_for_shell(url=resource_url)
         resource_relative_path = get_git_repository_name_from_url(r['url'])
@@ -213,7 +212,8 @@ def profile_pipeline(base_directory_full_path,
         subprocess.run(command, shell=True)
 
         resource_install_file_full_path = resource_full_path + '/' + resource['install_file']
-        for task in yaml.load(open(resource_install_file_full_path, 'r'))[0]['tasks']:
+        for task in yaml.load(open(resource_install_file_full_path,
+                                   'r'))[0]['tasks']:
             if 'apt' in task:
                 extra_packages['apt'].append(task['apt']['name'])
             if 'pip' in task:
@@ -224,7 +224,8 @@ def profile_pipeline(base_directory_full_path,
         dna = yaml.load(open(resource_dna_full_path, 'r'))
         resource_type = dna['type']
         resource_name = dna['name']
-        resource_relative_dest_path = profile_settings['resource_directory'][resource_type]
+        resource_relative_dest_path = profile_settings['resource_directory'][
+            resource_type]
 
         # Copy the resource directory in the profile directory only if
         # necessary thanks to the 'u' option.
@@ -234,15 +235,16 @@ def profile_pipeline(base_directory_full_path,
         subprocess.Popen(shlex.split(command))
 
     # Copy and rename to the final directory.
-    command = ('cp -aRu' + ' ' + target_profile_full_path + ' '
-        + docker_image_files_directory_full_path + '/'
-        + kalliope_profile_relative_path)
+    command = ('cp -aRu' + ' ' + target_profile_full_path + ' ' +
+               docker_image_files_directory_full_path + '/' +
+               kalliope_profile_relative_path)
     subprocess.Popen(shlex.split(command))
 
     return extra_packages
 
 
-def load_standard_packages_from_files(apt_requirements_filename, pip_requirements_filename):
+def load_standard_packages_from_files(apt_requirements_filename,
+                                      pip_requirements_filename):
     """Populate the standard package lists from text files.
 
     :returns: two lists.
@@ -272,36 +274,41 @@ def load_configuration_file(configuration_filename):
     config.read(configuration_filename)
 
     configuration = dict()
-    configuration['base_directory_full_path'] = config.get('Profile',
-                                                           'base directory full path',
-                                                           fallback=configuration_fallback['base_directory_full_path'])
-    configuration['kalliope_profile_git_url'] = config.get('Profile',
-                                                           'Git url',
-                                                           fallback=configuration_fallback['kalliope_profile_git_url'])
+    configuration['base_directory_full_path'] = config.get(
+        'Profile',
+        'base directory full path',
+        fallback=configuration_fallback['base_directory_full_path'])
+    configuration['kalliope_profile_git_url'] = config.get(
+        'Profile',
+        'Git url',
+        fallback=configuration_fallback['kalliope_profile_git_url'])
     configuration['resources_git_url'] = list()
     if 'Resources' in config:
         resources_items = config.items('Resources')
         for key, resource_git_url in resources_items:
             configuration['resources_git_url'].append(resource_git_url)
-    configuration['timezone'] = config.get('Environment',
-                                           'Timezone',
-                                           fallback=configuration_fallback['timezone'])
-    configuration['docker_image_tag'] = config.get('Docker',
-                                                   'Docker image tag',
-                                                   fallback=configuration_fallback['docker_image_tag'])
-    configuration['dockerfile'] = config.get('Docker',
-                                          'Dockerfile',
-                                          fallback=configuration_fallback['dockerfile'])
-    configuration['docker_image_files_directory'] = config.get('Docker',
-                                                'Image Files directory',
-                                                fallback=configuration_fallback['docker_image_files_directory'])
-    configuration['container_shared_home_directory'] = config.get('Docker',
-                                                      'Container shared home directory',
-                                                      fallback=configuration_fallback['container_shared_home_directory'])
-    configuration['debian_version'] = config.get('Docker',
-                                        'Debian version',
-                                        fallback=configuration_fallback['debian_version'])
-    configuration['cmu_sphinx_languages'] = configuration_fallback['cmu_sphinx_languages']
+    configuration['timezone'] = config.get(
+        'Environment', 'Timezone', fallback=configuration_fallback['timezone'])
+    configuration['docker_image_tag'] = config.get(
+        'Docker',
+        'Docker image tag',
+        fallback=configuration_fallback['docker_image_tag'])
+    configuration['dockerfile'] = config.get(
+        'Docker', 'Dockerfile', fallback=configuration_fallback['dockerfile'])
+    configuration['docker_image_files_directory'] = config.get(
+        'Docker',
+        'Image Files directory',
+        fallback=configuration_fallback['docker_image_files_directory'])
+    configuration['container_shared_home_directory'] = config.get(
+        'Docker',
+        'Container shared home directory',
+        fallback=configuration_fallback['container_shared_home_directory'])
+    configuration['debian_version'] = config.get(
+        'Docker',
+        'Debian version',
+        fallback=configuration_fallback['debian_version'])
+    configuration['cmu_sphinx_languages'] = configuration_fallback[
+        'cmu_sphinx_languages']
     if 'CMU Sphinx' in config:
         cmu_sphinx_languages = config.items('CMU Sphinx')
         for key, language in cmu_sphinx_languages:
@@ -310,9 +317,7 @@ def load_configuration_file(configuration_filename):
     return configuration
 
 
-def write_dockerfile(base_directory_full_path,
-                     dockerfile,
-                     dockerfile_string):
+def write_dockerfile(base_directory_full_path, dockerfile, dockerfile_string):
     """Write the dockerfile string to a proper file."""
     assert isinstance(base_directory_full_path, str)
     assert isinstance(dockerfile, str)
@@ -329,26 +334,25 @@ def clear_cache(base_directory_full_path):
 
     vars = quote_for_shell(base_directory_full_path=base_directory_full_path)
 
-    command='rm -rf' + ' ' + vars['base_directory_full_path']
+    command = 'rm -rf' + ' ' + vars['base_directory_full_path']
     subprocess.run(command, shell=True, check=True)
 
 
-def build_docker_image(base_directory_full_path,
-                       dockerfile,
-                       docker_image_tag):
+def build_docker_image(base_directory_full_path, dockerfile, docker_image_tag):
     """Build the docker image."""
     assert isinstance(base_directory_full_path, str)
     assert isinstance(dockerfile, str)
     assert isinstance(docker_image_tag, str)
 
-    vars = quote_for_shell(base_directory_full_path=base_directory_full_path,
-                           dockerfile=dockerfile,
-                           docker_image_tag=docker_image_tag)
+    vars = quote_for_shell(
+        base_directory_full_path=base_directory_full_path,
+        dockerfile=dockerfile,
+        docker_image_tag=docker_image_tag)
 
     dockerfile_full_path = vars['base_directory_full_path'] + '/' + vars['dockerfile']
-    command = ('docker build -t' + ' ' + vars['docker_image_tag'] + ' '
-              + '-f' + ' ' + dockerfile_full_path + ' '
-              + vars['base_directory_full_path'])
+    command = (
+        'docker build -t' + ' ' + vars['docker_image_tag'] + ' ' + '-f' + ' ' +
+        dockerfile_full_path + ' ' + vars['base_directory_full_path'])
     subprocess.run(command, shell=True, check=True)
 
 
@@ -374,23 +378,27 @@ def run_docker_container(base_directory_full_path,
     assert isinstance(docker_image_tag, str)
     assert isinstance(shell, bool)
 
-    vars = quote_for_shell(base_directory_full_path=base_directory_full_path,
-                           docker_image_files_directory=docker_image_files_directory,
-                           container_shared_home_directory=container_shared_home_directory,
-                           docker_image_tag=docker_image_tag)
+    vars = quote_for_shell(
+        base_directory_full_path=base_directory_full_path,
+        docker_image_files_directory=docker_image_files_directory,
+        container_shared_home_directory=container_shared_home_directory,
+        docker_image_tag=docker_image_tag)
 
-    docker_image_files_directory_full_path = (vars['base_directory_full_path']
-        + '/' + vars['docker_image_files_directory'])
-    command = ('docker run --rm=true --device' + ' '
-        + docker_volumes['audio'] + ' ' + '-v' + ' '
-        + docker_image_files_directory_full_path + ':'
-        + vars['container_shared_home_directory'])
+    docker_image_files_directory_full_path = (
+        vars['base_directory_full_path'] + '/' +
+        vars['docker_image_files_directory'])
+    command = ('docker run --rm=true --device' + ' ' + docker_volumes['audio']
+               + ' ' + '-v' + ' ' + docker_image_files_directory_full_path +
+               ':' + vars['container_shared_home_directory'])
     if shell:
         command = command + ' ' + '-it' + ' ' + vars['docker_image_tag'] + ' ' + '/bin/bash'
         subprocess.run(command, shell=True, check=True)
     else:
         command = command + ' ' + vars['docker_image_tag']
-        subprocess.Popen(shlex.split(command), stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            shlex.split(command),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
 
 
 if __name__ == '__main__':

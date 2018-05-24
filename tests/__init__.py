@@ -20,4 +20,3 @@
 # along with md-toc.  If not, see <http://www.gnu.org/licenses/>.
 #
 """Python discovery file."""
-
