@@ -1,8 +1,8 @@
 Kalliope Docker
 ===============
 
-Download, run and handle the voice controlled personal assistant Kalliope_ 
-inside a Debian Docker container.
+A Python script that downloads, runs, builds and handles the voice controlled 
+personal assistant Kalliope_ inside a Debian Docker container.
 
 .. _Kalliope: https://kalliope-project.github.io/
 

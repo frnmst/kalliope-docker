@@ -401,5 +401,27 @@ def run_docker_container(base_directory_full_path,
             stderr=subprocess.DEVNULL)
 
 
+def stop_docker_container(docker_image_tag):
+    """Stop all docker containers corresponding to the tag."""
+    assert isinstance(docker_image_tag, str)
+
+    # Get all running containers.
+    command = "docker ps --format {{.ID}}\\t{{.Image}}"
+    running_containers = subprocess.run(
+        command, shell=True,
+        stdout=subprocess.PIPE).stdout.strip().decode('utf-8').split('\n')[0:-1]
+
+    for container in running_containers:
+        sublist = container.split('\t')
+        if sublist[1] == docker_image_tag:
+            container_id = sublist[0]
+            stop_command = "docker stop" + " " + container_id
+            outs, errs = subprocess.Popen(stop_command).communicate()
+            subprocess.Popen(shlex.split(command))
+
+
+def delete_docker_containers():
+    pass
+
 if __name__ == '__main__':
     pass
