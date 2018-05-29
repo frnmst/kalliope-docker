@@ -9,10 +9,19 @@ Running
 ::
 
 
-        $ kalliope_docker setup download
-        $ kalliope_docker image build
-        $ kalliope_docker container run
+    $ kalliope_docker setup download
+    $ kalliope_docker image build
+    $ kalliope_docker container run -i
 
 
-If no errors are reported, Kalliope should be ready for orders.
+It might take a while to build the docker image. If no errors are reported, 
+Kalliope should be ready for orders after the last command.
+
+Once you are sure that Kalliope works as expected you can run the docker 
+container in the background:
+
+::
+
+        
+    $ kalliope_docker container run -i
 

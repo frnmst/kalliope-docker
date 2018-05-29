@@ -12,7 +12,6 @@ Welcome to kalliope_docker's documentation!
 
    install
    running
-   features
    notes
    copyright_license
 
