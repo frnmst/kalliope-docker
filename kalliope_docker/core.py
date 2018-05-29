@@ -120,7 +120,7 @@ def generate_dockerfile(standard_apt_packages, extra_apt_packages,
         # Get the path. FIXME: not working because of quotation problems or
         # something..
         # dockerfile += 'ENV SR_LIB="$(python -c \'import speech_recognition as sr, os.path as p; print(p.dirname(sr.__file__))\')"'
-        dockerfile += "SR_LIB=/usr/local/lib/python2.7/dist-packages/speech_recognition"
+        dockerfile += "ENV SR_LIB=/usr/local/lib/python2.7/dist-packages/speech_recognition"
         dockerfile += "\n"
         for l in cmu_sphinx_languages:
             if l in cmu_sphinx['language_models']:
@@ -128,10 +128,10 @@ def generate_dockerfile(standard_apt_packages, extra_apt_packages,
                 dockerfile += "RUN wget" + " " + cmu_sphinx['language_models'][l] + " " + '-O "$SR_LIB' + "/" + l + '.zip"'
                 dockerfile += "\n"
                 # unzip.
-                dockerfile += 'RUN unzip -o "$SR_LIB/pocketsphinx-data' + "/" + l + '.zip" -d "$SR_LIB"'
+                dockerfile += 'RUN unzip -o "$SR_LIB' + "/" + l + '.zip" -d "$SR_LIB"'
                 dockerfile += "\n"
                 # chmod.
-                dockerfile += 'RUN chmod --recursive a+r "$SR_LIB' + "/" + l + '/"'
+                dockerfile += 'RUN chmod --recursive a+r "$SR_LIB/pocketsphinx-data' + "/" + l + '/"'
                 dockerfile += "\n"
 
     # Setup initial environment.
@@ -420,8 +420,10 @@ def stop_docker_container(docker_image_tag):
             subprocess.Popen(shlex.split(command))
 
 
-def delete_docker_containers():
+def remove_docker_containers():
+    """Remove all docker containers corresponding to the kalliope-docker image."""
     pass
+
 
 if __name__ == '__main__':
     pass
