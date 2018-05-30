@@ -13,6 +13,11 @@ Video
      :target: https://asciinema.org/a/145756
      :align: center
 
+Documentation
+-------------
+
+https://frnmst.github.io/kalliope-docker
+
 Copyright and License
 ---------------------
 
