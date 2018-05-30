@@ -402,23 +402,23 @@ def run_docker_container(base_directory_full_path,
 
 
 def stop_docker_container(docker_image_tag):
-    """Stop all docker containers corresponding to the tag."""
+    """Stop all docker containers corresponding to the image tag."""
     assert isinstance(docker_image_tag, str)
 
+    vars = quote_for_shell(docker_image_tag=docker_image_tag)
+
     # Get all running containers.
-    command = "docker ps --format {{.ID}}\\t{{.Image}}"
+    command = 'docker ps --format "{{.ID}} {{.Image}}"'
     running_containers = subprocess.run(
         command, shell=True,
-        stdout=subprocess.PIPE).stdout.strip().decode('utf-8').split('\n')[0:-1]
+        stdout=subprocess.PIPE).stdout.strip().decode('utf-8').split('\n')
 
     for container in running_containers:
-        sublist = container.split('\t')
-        if sublist[1] == docker_image_tag:
+        sublist = container.split(' ')
+        if sublist[1] == vars['docker_image_tag']:
             container_id = sublist[0]
-            stop_command = "docker stop" + " " + container_id
-            outs, errs = subprocess.Popen(stop_command).communicate()
-            subprocess.Popen(shlex.split(command))
-
+            command = "docker stop" + " " + container_id
+            subprocess.run(command, shell=True, check=True)
 
 def remove_docker_containers():
     """Remove all docker containers corresponding to the kalliope-docker image."""
