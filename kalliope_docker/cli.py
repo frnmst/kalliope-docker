@@ -103,7 +103,8 @@ class CliToApi():
         kalliope_docker_configuration = load_configuration_file(
             args.configuration_file)
 
-        stop_docker_container(kalliope_docker_configuration['docker_image_tag'])
+        stop_docker_container(
+            kalliope_docker_configuration['docker_image_tag'])
 
 
 class CliInterface():
@@ -126,12 +127,12 @@ class CliInterface():
             default=file_paths['kalliope_docker_configuration'],
             help='path of the configuration file')
 
-        subparsers = parser.add_subparsers(dest='parser', title='command')
+        subparsers = parser.add_subparsers(dest='command', title='command')
         subparsers.required = True
 
         setup = subparsers.add_parser(
             'setup', description='download all dependencies')
-        sgp = setup.add_subparsers(dest='command')
+        sgp = setup.add_subparsers(dest='subcommand')
         sgp.required = True
         setup_download = sgp.add_parser(
             'download', help='download the profile and all the dependencies')
@@ -141,7 +142,7 @@ class CliInterface():
 
         image = subparsers.add_parser(
             'image', description='interact with the Docker image')
-        igp = image.add_subparsers(dest='command')
+        igp = image.add_subparsers(dest='subcommand')
         igp.required = True
         image_build = igp.add_parser('build', help='build the docker image')
         image_build.set_defaults(func=CliToApi().image_build)
@@ -150,7 +151,7 @@ class CliInterface():
 
         container = subparsers.add_parser(
             'container', description='interact with the Docker container')
-        cgp = container.add_subparsers(dest='command')
+        cgp = container.add_subparsers(dest='subcommand')
         cgp.required = True
         container_run = cgp.add_parser('run', help='run the container')
         container_run.set_defaults(func=CliToApi().container_run)
