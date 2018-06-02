@@ -11,6 +11,8 @@ Welcome to kalliope_docker's documentation!
    :caption: Contents:
 
    install
+   configuration_file
+   cache_files
    running
    notes
    copyright_license
