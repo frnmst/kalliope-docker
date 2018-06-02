@@ -420,10 +420,6 @@ def stop_docker_container(docker_image_tag):
             command = "docker stop" + " " + container_id
             subprocess.run(command, shell=True, check=True)
 
-def remove_docker_containers():
-    """Remove all docker containers corresponding to the kalliope-docker image."""
-    pass
-
 
 if __name__ == '__main__':
     pass

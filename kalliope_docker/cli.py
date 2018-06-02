@@ -27,7 +27,7 @@ from .core import (profile_pipeline, load_configuration_file,
                    load_standard_packages_from_files, generate_dockerfile,
                    write_dockerfile, clear_cache, build_docker_image,
                    remove_docker_image, run_docker_container,
-                   stop_docker_container, remove_docker_containers)
+                   stop_docker_container)
 from .constants import (file_paths)
 
 PROGRAM_DESCRIPTION = 'Kalliope Docker: run and setup Kalliope inside a Docker container.'
@@ -105,12 +105,6 @@ class CliToApi():
 
         stop_docker_container(kalliope_docker_configuration['docker_image_tag'])
 
-    def container_remove(self, args):
-        kalliope_docker_configuration = load_configuration_file(
-            args.configuration_file)
-
-        remove_docker_containers()
-
 
 class CliInterface():
     """The interface exposed to the final user."""
@@ -167,9 +161,5 @@ class CliInterface():
             help='run an interactive shell inside the container')
         container_stop = cgp.add_parser('stop', help='stop the container')
         container_stop.set_defaults(func=CliToApi().container_stop)
-        container_remove = cgp.add_parser('remove', help='remove the containers')
-        container_remove.set_defaults(func=CliToApi().container_remove)
-
-        # remove (in case auto-remove does not work).
 
         return parser
