@@ -410,12 +410,12 @@ def stop_docker_container(docker_image_tag):
     # Get all running containers.
     command = 'docker ps --format "{{.ID}} {{.Image}}"'
     running_containers = subprocess.run(
-        command, shell=True,
+        command, shell=True, check=True,
         stdout=subprocess.PIPE).stdout.strip().decode('utf-8').split('\n')
 
     for container in running_containers:
         sublist = container.split(' ')
-        if sublist[1] == vars['docker_image_tag']:
+        if sublist != [''] and sublist[1] == vars['docker_image_tag']:
             container_id = sublist[0]
             command = "docker stop" + " " + container_id
             subprocess.run(command, shell=True, check=True)

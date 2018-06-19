@@ -21,6 +21,7 @@
 # SOFTWARE.
 """A file that contains all the global constants."""
 
+import pkg_resources
 from pathlib import Path
 
 home_directory = str(Path.home())
@@ -45,11 +46,25 @@ file_paths = dict()
 file_paths[
     'config_directory'] = home_directory + '/' + '.config/kalliope_docker'
 file_paths[
-    'apt_requirements'] = 'includes/requirements/standard_apt_packages.txt'
-file_paths[
-    'pip_requirements'] = 'includes/requirements/standard_pip_packages.txt'
-file_paths[
     'kalliope_docker_configuration'] = file_paths['config_directory'] + '/' + 'kalliope_docker.conf'
+
+# These files should be under ~/.config/kalliope_docker/.
+# If not, find a suitable path.
+if Path(file_paths['config_directory'] + ' ' + '/' + 'standard_apt_packages.txt').is_file():
+    file_paths['apt_requirements'] = file_paths['config_directory'] + '/' + 'requirements/standard_apt_packages.txt'
+elif pkg_resources.resource_exists('kalliope_docker', 'includes/requirements/standard_apt_packages.txt'):
+    file_paths['apt_requirements'] = pkg_resources.resource_filename('kalliope_docker', 'includes/requirements/standard_apt_packages.txt')
+else:
+    file_paths[
+        'apt_requirements'] = 'includes/requirements/standard_apt_packages.txt'
+
+if Path(file_paths['config_directory'] + ' ' + '/' + 'standard_pip_packages.txt').is_file():
+    file_paths['pip_requirements'] = file_paths['config_directory'] + '/' + 'requirements/standard_pip_packages.txt'
+elif pkg_resources.resource_exists('kalliope_docker', 'includes/requirements/standard_pip_packages.txt'):
+    file_paths['pip_requirements'] = pkg_resources.resource_filename('kalliope_docker', 'includes/requirements/standard_pip_packages.txt')
+else:
+    file_paths[
+        'pip_requirements'] = 'includes/requirements/standard_pip_packages.txt'
 
 # The final profile that gets copied under
 # configuration_fallback['base_directory_full_path']
@@ -78,6 +93,7 @@ cmu_sphinx['language_models'][
     'it-IT'] = 'https://github.com/Uberi/speech_recognition/files/683258/it-IT.zip'
 cmu_sphinx['language_models']['fr-FR'] = 'https://db.tt/tVNcZXao'
 cmu_sphinx['language_models']['zh-CN'] = 'https://db.tt/2YQVXmEk'
+
 
 if __name__ == '__main__':
     pass

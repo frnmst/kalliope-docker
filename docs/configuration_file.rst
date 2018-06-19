@@ -1,11 +1,22 @@
 Configuration File
 ==================
 
+Definition
+----------
+
+The configuration file holds all relevant information of your Kalliope setup.
+
+Paths
+-----
+
 The configuration file must lie in:
 
 ::
 
     ~/.config/kalliope_rest/kalliope_rest.conf
+
+Example
+-------
 
 What follows is an example of configuration file which is included in
 this repository
