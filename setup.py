@@ -30,7 +30,7 @@ setup(
     description='A Python script that downloads, runs, builds and handles the voice controlled personal assistant Kalliope inside a Debian Docker container.',
     long_description=open('README.rst').read(),
     package_data={
-        '': ['*.txt', '*.rst'],
+        '': ['includes/kalliope_docker.conf.dist', 'includes/requirements/*'],
     },
     author='Franco Masotti',
     author_email='franco.masotti@student.unife.it',
@@ -48,7 +48,7 @@ setup(
         'Topic :: Utilities',
         'Intended Audience :: End Users/Desktop',
         'Environment :: Console',
-#        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
     ],
     install_requires=['PyYAML'],

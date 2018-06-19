@@ -45,9 +45,9 @@ file_paths = dict()
 file_paths[
     'config_directory'] = home_directory + '/' + '.config/kalliope_docker'
 file_paths[
-    'apt_requirements'] = 'kalliope_docker/requirements/standard_apt_packages.txt'
+    'apt_requirements'] = 'includes/requirements/standard_apt_packages.txt'
 file_paths[
-    'pip_requirements'] = 'kalliope_docker/requirements/standard_pip_packages.txt'
+    'pip_requirements'] = 'includes/requirements/standard_pip_packages.txt'
 file_paths[
     'kalliope_docker_configuration'] = file_paths['config_directory'] + '/' + 'kalliope_docker.conf'
 
