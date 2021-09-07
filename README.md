@@ -1,6 +1,6 @@
 # Project moved
 
-- [https://software.franco.net.eu.org/frnmst/kalliope-docker](https://software.franco.net.eu.org/frnmst/kalliope-docker)
+- [https://software.franco.net.eu.org/frnmst-archives/kalliope-docker](https://software.franco.net.eu.org/frnmst-archives/kalliope-docker)
   - personal instance
   - see [this](https://software.franco.net.eu.org/frnmst/software.franco.net.eu.org/src/branch/master/privacy_policy.md#user-content-table-of-contents)
 - [https://codeberg.org/frnmst/kalliope-docker](https://codeberg.org/frnmst/kalliope-docker)
